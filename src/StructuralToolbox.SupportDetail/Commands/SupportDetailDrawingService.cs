@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
@@ -23,7 +22,6 @@ namespace StructuralToolbox.SupportDetail.Commands
         public int DimensionCount;
         public int PierCount;
         public int ColumnCount;
-        public bool FixedDetailsInserted;
         public bool MaterialTableInserted;
         public IList<ObjectId> EntityIds = new List<ObjectId>();
     }
@@ -35,8 +33,6 @@ namespace StructuralToolbox.SupportDetail.Commands
         internal const string EntityVersion = "0.1";
         internal const string DictionaryName = "STPV_SUPPORT_DETAIL_INSTANCES";
         internal const string RecordVersion = "0.1";
-        internal const string FixedDetailBlockName =
-            "STPV_SUPPORT_FIXED_DETAILS_V01";
 
         public static ObjectId EnsureLayer(Database database,
             Transaction transaction, string layerName)
@@ -67,8 +63,7 @@ namespace StructuralToolbox.SupportDetail.Commands
 
         public static SupportDetailDrawSummary AppendInstance(
             Database database, Transaction transaction, ObjectId layerId,
-            SupportDetailGeometry geometry, Point3d origin, string instanceId,
-            string fixedDetailLibraryPath)
+            SupportDetailGeometry geometry, Point3d origin, string instanceId)
         {
             if (geometry == null)
                 throw new ArgumentNullException("geometry");
@@ -104,9 +99,9 @@ namespace StructuralToolbox.SupportDetail.Commands
                 summary);
             if (geometry.Settings.IncludeNodeDetails)
             {
-                summary.FixedDetailsInserted = InsertFixedDetails(database,
+                DrawNodeSchematics(database,
                     transaction, modelSpace, layerId, geometry, origin,
-                    instanceId, fixedDetailLibraryPath, summary);
+                    instanceId, summary);
             }
             if (geometry.Settings.IncludeMaterialTable)
             {
@@ -536,51 +531,7 @@ namespace StructuralToolbox.SupportDetail.Commands
                 textHeight * 0.8, instanceId, "GEOMETRY_NOTE", summary);
         }
 
-        private static bool InsertFixedDetails(Database database,
-            Transaction transaction, BlockTableRecord modelSpace,
-            ObjectId layerId, SupportDetailGeometry geometry, Point3d origin,
-            string instanceId, string libraryPath,
-            SupportDetailDrawSummary summary)
-        {
-            if (String.IsNullOrWhiteSpace(libraryPath) ||
-                !File.Exists(libraryPath))
-            {
-                DrawFallbackNodeDetails(database, transaction, modelSpace,
-                    layerId, geometry, origin, instanceId, summary);
-                return false;
-            }
-
-            BlockTable blockTable = (BlockTable)transaction.GetObject(
-                database.BlockTableId, OpenMode.ForRead);
-            ObjectId blockDefinitionId;
-            if (blockTable.Has(FixedDetailBlockName))
-            {
-                blockDefinitionId = blockTable[FixedDetailBlockName];
-            }
-            else
-            {
-                using (Database source = new Database(false, true))
-                {
-                    source.ReadDwgFile(libraryPath,
-                        FileOpenMode.OpenForReadAndAllShare, true, String.Empty);
-                    source.CloseInput(true);
-                    blockDefinitionId = database.Insert(FixedDetailBlockName,
-                        source, false);
-                }
-            }
-
-            double x = Math.Max(geometry.BeamStart.X,
-                geometry.BeamEnd.X) + 1400.0;
-            BlockReference reference = new BlockReference(
-                new Point3d(origin.X + x, origin.Y, origin.Z),
-                blockDefinitionId);
-            reference.ScaleFactors = new Scale3d(0.30);
-            AddEntity(database, transaction, modelSpace, layerId, reference,
-                instanceId, "FIXED_NODE_DETAILS", summary);
-            return true;
-        }
-
-        private static void DrawFallbackNodeDetails(Database database,
+        private static void DrawNodeSchematics(Database database,
             Transaction transaction, BlockTableRecord modelSpace,
             ObjectId layerId, SupportDetailGeometry geometry, Point3d origin,
             string instanceId, SupportDetailDrawSummary summary)
@@ -600,14 +551,14 @@ namespace StructuralToolbox.SupportDetail.Commands
                 AddText(database, transaction, modelSpace, layerId,
                     new Point3d(origin.X + x + 40.0,
                         origin.Y + y + boxHeight - 140.0, origin.Z),
-                    "节点" + (char)('A' + index), 100.0, instanceId,
+                    "节点示意" + (char)('A' + index), 100.0, instanceId,
                     "NODE_LABEL_" + (char)('A' + index), summary);
-                DrawFallbackNodeSymbol(database, transaction, modelSpace,
+                DrawNodeSymbol(database, transaction, modelSpace,
                     layerId, x, y, index, origin, instanceId, summary);
             }
         }
 
-        private static void DrawFallbackNodeSymbol(Database database,
+        private static void DrawNodeSymbol(Database database,
             Transaction transaction, BlockTableRecord modelSpace,
             ObjectId layerId, double x, double y, int nodeIndex,
             Point3d origin, string instanceId, SupportDetailDrawSummary summary)

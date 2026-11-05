@@ -7,7 +7,7 @@ namespace StructuralToolbox.Update
     {
         // Public GitHub release assets only; never place repository credentials here.
         public const string DefaultManifestUrl =
-            "https://github.com/deepfry666/SijiPVToolbox-Releases/releases/latest/download/stable.json";
+            "https://github.com/deepfry666/fourj-pv-toolbox/releases/latest/download/stable.json";
 
         public static string Resolve()
         {

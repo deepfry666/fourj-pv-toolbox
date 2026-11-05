@@ -167,7 +167,7 @@ namespace StructuralToolbox.SupportDetail.UI
             AddSection(fields, "出图内容");
             _outputLayer = AddText(fields, "输出图层", "OutputLayer",
                 ResultSettings.OutputLayer, null);
-            _includeNodes = AddCheckBox(fields, "附固定节点 A-D",
+            _includeNodes = AddCheckBox(fields, "附节点示意 A-D",
                 "IncludeNodeDetails", ResultSettings.IncludeNodeDetails);
             _includeTable = AddCheckBox(fields, "附材料表",
                 "IncludeMaterialTable", ResultSettings.IncludeMaterialTable);

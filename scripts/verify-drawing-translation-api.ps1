@@ -10,7 +10,7 @@
 #   1. 交付 DLL 能在 AutoCAD 宿主进程里 NETLOAD；
 #   2. STPVTRANSLATETEST 把两条示例文字发给当前配置的接口并拿回译文；
 #   3. 整条链路（DNS、TLS、代理、密钥、模型、JSON 解析）在宿主进程里可用；
-#   4. 自检不修改图纸，模板图.dwg 的哈希保持不变。
+#   4. 自检不修改图纸，自主生成的测试图 的哈希保持不变。
 # 不能在这里验证的：
 #   STPVTRANSLATECONFIRM 的命令体依赖 WinForms 对话框；STPVTRANSLATE
 #   会直接写图，均不在接口自检脚本中执行，
@@ -36,7 +36,7 @@ $projectRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 $coreConsole = Join-Path $AutoCADDir "accoreconsole.exe"
 $logPath = Join-Path $env:LOCALAPPDATA "FourSeasonsPVToolbox\DrawingTranslation.log"
 $moduleName = "StructuralToolbox.DrawingTranslation.dll"
-$templateName = (-join @([char]27169, [char]26495, [char]22270)) + ".dwg"
+
 
 function Find-NewestDeliveryDll([string]$root) {
     $deliveryRoot = Join-Path $root "outputs"
@@ -66,7 +66,7 @@ function Find-NewestDeliveryDll([string]$root) {
 if ([String]::IsNullOrWhiteSpace($DllPath)) { $DllPath = Find-NewestDeliveryDll $projectRoot }
 if ([String]::IsNullOrWhiteSpace($DllPath)) { throw "outputs 下没有找到任何交付 DLL" }
 $DllPath = [IO.Path]::GetFullPath($DllPath)
-$templatePath = Join-Path $projectRoot $templateName
+$templatePath = & (Join-Path $PSScriptRoot "New-TestDrawing.ps1") -AutoCADDir $AutoCADDir
 foreach ($required in @($coreConsole, $DllPath, $templatePath)) {
     if (-not (Test-Path -LiteralPath $required -PathType Leaf)) { throw "missing: $required" }
 }
@@ -185,7 +185,7 @@ try {
     Assert-NotContains $log "无法连接翻译服务" "宿主进程能连上翻译服务"
 
     $templateAfter = (Get-Sha256 $templatePath)
-    Assert-True ($templateBefore -eq $templateAfter) "模板图.dwg 未被修改"
+    Assert-True ($templateBefore -eq $templateAfter) "自主生成的测试图 未被修改"
     Write-Output ("STPV_API_VERIFY_DIR=" + $runRoot)
     Write-Output "PASS 翻译接口端到端自检（真实接口 + AutoCAD 内核控制台）"
 } finally {

@@ -1,6 +1,6 @@
 # Git 与版本发行规范
 
-源码与发行现在统一维护于 `deepfry666/SijiPVToolbox-Releases`。历史标签及安装包不改动，本次导入源码不伪装为旧标签对应构建；详见根目录 `OPEN_SOURCE.md`。生成的 EXE/DLL 不再提交 Git，而是作为候选本地验证后上传 Release。下一次正式发版使用新版本号，重新生成当前公开源码提交的追溯记录；依赖原私有提交或本地历史产物的检查仍需原备份环境。
+源码与发行现在统一维护于 `deepfry666/fourj-pv-toolbox`。历史标签及安装包不改动，本次导入源码不伪装为旧标签对应构建；详见根目录 `OPEN_SOURCE.md`。生成的 EXE/DLL 不再提交 Git，而是作为候选本地验证后上传 Release。下一次正式发版使用新版本号，重新生成当前公开源码提交的追溯记录；依赖原私有提交或本地历史产物的检查仍需原备份环境。
 
 ## 版本身份
 
@@ -21,7 +21,7 @@ GitHub 资产：FourJ_PV_Toolbox_Setup_v<版本>.exe
 正式客户端只读取：
 
 ```text
-https://github.com/deepfry666/SijiPVToolbox-Releases/releases/latest/download/stable.json
+https://github.com/deepfry666/fourj-pv-toolbox/releases/latest/download/stable.json
 ```
 
 `stable.json` 的 `url` 必须直接指向同版本 GitHub Release 的安装器资产，`mirrors` 必须为空。

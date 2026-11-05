@@ -2,7 +2,7 @@
 
 ## 唯一维护入口
 
-[SijiPVToolbox-Releases](https://github.com/deepfry666/SijiPVToolbox-Releases) 同时维护源码、问题清单、安装包和自动更新。仓库名保留不变，避免影响已安装版本。
+[fourj-pv-toolbox](https://github.com/deepfry666/fourj-pv-toolbox) 同时维护源码、问题清单、安装包和自动更新。仓库已从 `SijiPVToolbox-Releases` 改名；旧地址由 GitHub 重定向，禁止重新创建同名仓库而截断旧客户端更新。
 
 公开导入采用审查后的源码快照，基线记录在 `SOURCE_SNAPSHOT.json`。旧私有 Git 历史不在此仓库中；旧公开 Release、标签、安装包和校验文件保持原样。历史标签不指向本次导入的源码树，不应据此声称旧安装包已实现公开源码可复现构建。从后续新版本开始统一公开源码提交、版本标签和发行记录，不覆盖旧包。
 
@@ -20,7 +20,7 @@
 2. 在新的目录重新克隆公开主库：
 
 ```powershell
-git clone https://github.com/deepfry666/SijiPVToolbox-Releases.git FourJ-PV-Toolbox
+git clone https://github.com/deepfry666/fourj-pv-toolbox.git FourJ-PV-Toolbox
 cd FourJ-PV-Toolbox
 ```
 
@@ -36,18 +36,18 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build.ps1 -AutoCADDi
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test.ps1
 ```
 
-公开仓库不预置生成的 DLL、EXE 和私有 DWG。部分 CAD 验证脚本需要根目录 `模板图.dwg` 或显式 `-InputDwg`；请自行准备有权使用、且符合相应用例要求的图纸，测试只使用 `work/` 副本，不提交这些文件。支架大样是未集成到当前正式包的历史独立模块，其固定详图库也未公开；缺少资源时，相关功能和资源检查不能视为已通过。
+公开仓库不预置生成的 DLL、EXE 或参考 DWG。`scripts/New-TestDrawing.ps1` 从空 AutoCAD 数据库生成毫米制测试种子，各 CAD 测试自行创建样例实体；生成物只写入 `work/`。支架独立模块只生成参数化几何和自主节点示意，已移除第三方详图库的嵌入、提取、缓存和加载路径。`verify-real-drawing.ps1 -InputDwg` 仍可对用户显式指定的自有图纸进行额外验证，但不是日常回归的资源依赖。
 
 历史追溯/发布检查中依赖旧源码提交、构建回执或私有原始产物的部分，需要原备份环境；公开快照没有携带这些历史证据。本次不修改这些检查以制造通过结果。
 
-本次仅整理仓库，没有在 macOS 上完成 Windows / AutoCAD 正式构建、CAD 交互或安装升级验收，也没有生成、替换、发布任何新安装包。平台后续验收由 `ISSUE-0058` 跟踪。
+本轮 Windows 验证记录见 `REPOSITORY_MIGRATION.md`。源码改动并不等同于已发布新安装包；旧安装包继续使用原有更新器。实际安装升级的边界由 `ISSUE-0058` 跟踪。
 
 ## 更新入口保持不变
 
 客户端继续读取：
 
 ```text
-https://github.com/deepfry666/SijiPVToolbox-Releases/releases/latest/download/stable.json
+https://github.com/deepfry666/fourj-pv-toolbox/releases/latest/download/stable.json
 ```
 
 保持 HTTPS、大小和 SHA-256 校验，不把仓库凭据放进客户端。发布新版本仍须完成现有候选构建、CAD 和安装器验证流程。

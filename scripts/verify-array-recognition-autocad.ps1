@@ -3,7 +3,7 @@
 $ErrorActionPreference = "Stop"
 $projectRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
 $coreConsole = Join-Path $AutoCADDir "accoreconsole.exe"
-$template = Join-Path $projectRoot "模板图.dwg"
+$template = & (Join-Path $PSScriptRoot "New-TestDrawing.ps1") -AutoCADDir $AutoCADDir
 foreach ($path in @($coreConsole, $template)) {
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
         throw "AutoCAD verification dependency was not found: $path"

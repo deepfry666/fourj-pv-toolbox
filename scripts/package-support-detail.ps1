@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$AutoCADDir = "D:\cad\AutoCAD 2020",
     [string]$Version = "0.4.2",
     [string]$OutputDirectory = ""
@@ -33,16 +33,9 @@ $assemblyVersion = [Reflection.AssemblyName]::GetAssemblyName(
 if ($assemblyVersion -ne $expectedVersion) {
     throw "Assembly version $assemblyVersion does not match package $expectedVersion."
 }
-if ([String]::IsNullOrWhiteSpace([string]$build.librarySource) -or
-    -not (Test-Path -LiteralPath $build.librarySource -PathType Leaf)) {
-    throw "The fixed detail library source is missing from the module build."
-}
-
-$resourceName =
-    "StructuralToolbox.SupportDetail.SupportDetailFixedDetails.dwg"
 $resourceAssembly = [Reflection.Assembly]::LoadFrom($build.path)
-if ($resourceAssembly.GetManifestResourceNames() -notcontains $resourceName) {
-    throw "The support detail DLL does not contain the fixed detail library."
+if (@($resourceAssembly.GetManifestResourceNames() | Where-Object { $_ -match '\.(dwg|dxf)$' }).Count -ne 0) {
+    throw "Reference drawings must not be embedded in the support module."
 }
 
 if (Test-Path -LiteralPath $packageRoot -PathType Container) {
@@ -72,6 +65,6 @@ $checksumLines = foreach ($name in $artifactNames) {
     $checksumLines, [Text.UTF8Encoding]::new($false))
 
 Write-Host "Diagnostic package: $packageRoot"
-Write-Host "The fixed detail DWG is embedded in StructuralToolbox.SupportDetail.dll."
+Write-Host "The diagnostic module generates its own geometry and contains no reference drawings."
 Get-ChildItem -LiteralPath $packageRoot -File |
     Sort-Object Name | Select-Object Name, Length, LastWriteTime

@@ -11,23 +11,48 @@ function Assert-Condition([bool]$Condition, [string]$Message) {
 }
 
 try {
-    $installer = Join-Path $projectRoot 'outputs\update-release-v1.0.3\github\FourJ_PV_Toolbox_Setup_v1.0.3.exe'
-    $notes = Join-Path $projectRoot 'docs\current\release-notes-v1.0.3.md'
-    & (Join-Path $projectRoot 'scripts\update-service\New-UpdateRelease.ps1') `
-        -Version 1.0.3 -InstallerPath $installer -SourceRef v1.0.3 `
+    # Use a disposable source repository and versioned PE fixture, never a
+    # historical private commit or an installer absent from a clean checkout.
+    $fixtureRoot = Join-Path $workRoot 'fixture'
+    $sourceFolder = Join-Path $fixtureRoot 'src\StructuralToolbox\Properties'
+    $scriptFolder = Join-Path $fixtureRoot 'scripts\update-service'
+    New-Item -ItemType Directory -Path $sourceFolder, $scriptFolder -Force | Out-Null
+    $assemblyInfo = Join-Path $sourceFolder 'AssemblyInfo.cs'
+    '[assembly: System.Reflection.AssemblyVersion("1.0.3.0")]' |
+        Set-Content -LiteralPath $assemblyInfo -Encoding UTF8
+    $fixtureSource = Join-Path $fixtureRoot 'InstallerFixture.cs'
+    @'
+[assembly: System.Reflection.AssemblyFileVersion("1.0.3.0")]
+[assembly: System.Reflection.AssemblyInformationalVersion("1.0.3.0")]
+public static class Fixture { public static void Main() {} }
+'@ | Set-Content -LiteralPath $fixtureSource -Encoding UTF8
+    $installer = Join-Path $fixtureRoot 'installer.exe'
+    & 'C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe' /nologo /target:exe "/out:$installer" $fixtureSource
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot compile installer metadata fixture.' }
+    & git -C $fixtureRoot init -q
+    & git -C $fixtureRoot add src
+    & git -C $fixtureRoot -c user.name=Test -c user.email=test@example.invalid commit -qm fixture
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot commit source fixture.' }
+    $prepareScript = Join-Path $scriptFolder 'New-UpdateRelease.ps1'
+    Copy-Item -LiteralPath (Join-Path $projectRoot 'scripts\update-service\New-UpdateRelease.ps1') -Destination $prepareScript
+    $notes = Join-Path $fixtureRoot 'notes.md'
+    'Test release preparation only.' | Set-Content -LiteralPath $notes -Encoding UTF8
+    $preparedRoot = Join-Path $workRoot 'prepared'
+    & $prepareScript `
+        -Version 1.0.3 -InstallerPath $installer -SourceRef HEAD `
         -NotesPath $notes -ReleaseDate ([datetime]'2026-09-16') `
-        -OutputDirectory $workRoot | Out-Null
+        -OutputDirectory $preparedRoot | Out-Null
 
-    $assets = Join-Path $workRoot 'github'
+    $assets = Join-Path $preparedRoot 'github'
     $manifest = Get-Content -LiteralPath (Join-Path $assets 'stable.json') `
         -Raw -Encoding UTF8 | ConvertFrom-Json
     $expectedName = 'FourJ_PV_Toolbox_Setup_v1.0.3.exe'
-    $expectedUrl = 'https://github.com/deepfry666/SijiPVToolbox-Releases/releases/download/v1.0.3/' + $expectedName
+    $expectedUrl = 'https://github.com/deepfry666/fourj-pv-toolbox/releases/download/v1.0.3/' + $expectedName
     Assert-Condition ($manifest.url -eq $expectedUrl) `
         'stable manifest uses the versioned GitHub release asset'
     Assert-Condition (@($manifest.mirrors).Count -eq 0) `
         'stable manifest has no VPS or other mirrors'
-    Assert-Condition (-not (Test-Path -LiteralPath (Join-Path $workRoot 'vps'))) `
+    Assert-Condition (-not (Test-Path -LiteralPath (Join-Path $preparedRoot 'vps'))) `
         'release preparation does not create a VPS site'
     foreach ($file in @($expectedName, 'stable.json', 'sha256.txt', 'release.json', 'RELEASE.md')) {
         Assert-Condition (Test-Path -LiteralPath (Join-Path $assets $file) -PathType Leaf) `
@@ -42,7 +67,7 @@ try {
     $resolver = Get-Content -LiteralPath (Join-Path $projectRoot `
         'src\StructuralToolbox.Update\Core\UpdateSourceResolver.cs') -Raw -Encoding UTF8
     Assert-Condition ($resolver.Contains(
-        'https://github.com/deepfry666/SijiPVToolbox-Releases/releases/latest/download/stable.json')) `
+        'https://github.com/deepfry666/fourj-pv-toolbox/releases/latest/download/stable.json')) `
         'client uses the GitHub latest stable manifest'
     Assert-Condition (-not $resolver.Contains('download.imfourj.cn')) `
         'client no longer contains the VPS manifest URL'

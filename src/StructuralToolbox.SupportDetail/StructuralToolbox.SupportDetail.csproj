@@ -57,10 +57,5 @@
     <Compile Include="Commands\SupportDetailDrawingService.cs" />
     <Compile Include="Commands\SupportDetailCommands.cs" />
   </ItemGroup>
-  <ItemGroup Condition="Exists('Library\SupportDetailFixedDetails.dwg')">
-    <EmbeddedResource Include="Library\SupportDetailFixedDetails.dwg">
-      <LogicalName>StructuralToolbox.SupportDetail.SupportDetailFixedDetails.dwg</LogicalName>
-    </EmbeddedResource>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

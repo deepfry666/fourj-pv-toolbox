@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$AutoCADDir = "D:\cad\AutoCAD 2020",
     [string]$AssemblyPath = "",
     [string]$InputDwg = ""
@@ -11,8 +11,8 @@ if ([String]::IsNullOrWhiteSpace($AssemblyPath)) {
         "outputs\StructuralToolbox.Layout_v0.1.2_AutoCAD2020\StructuralToolbox.Layout.dll"
 }
 if ([String]::IsNullOrWhiteSpace($InputDwg)) {
-    $templateName = -join @([char]27169, [char]26495, [char]22270) + ".dwg"
-    $InputDwg = Join-Path $projectRoot $templateName
+
+    $InputDwg = & (Join-Path $PSScriptRoot "New-TestDrawing.ps1") -AutoCADDir $AutoCADDir
 }
 $AssemblyPath = [IO.Path]::GetFullPath($AssemblyPath)
 $InputDwg = [IO.Path]::GetFullPath($InputDwg)

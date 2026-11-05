@@ -175,8 +175,8 @@ function Assert-True([bool]$condition, [string]$label) {
 }
 function Invoke-Scenario([string]$name, [string[]]$dlls, [string[]]$extra) {
     $fixture = Join-Path $runRoot ($name + ".dwg")
-    $templateName = (-join @([char]27169, [char]26495, [char]22270)) + ".dwg"
-    Copy-Item -LiteralPath (Join-Path $projectRoot $templateName) -Destination $fixture
+
+    Copy-Item -LiteralPath (& (Join-Path $PSScriptRoot "New-TestDrawing.ps1") -AutoCADDir $AutoCADDir) -Destination $fixture
     $lines = @('(setvar "REPORTERROR" 0)', '(setvar "SECURELOAD" 0)')
     $lines += '_.NETLOAD'
     $lines += (Convert-ToQPath (Join-Path $currentFolder `
@@ -213,8 +213,8 @@ function Invoke-OldSessionScenario {
     # .gitignore 排除，干净检出时不存在），门禁改用上面编译的同名旧版替身。
     if (-not (Test-Path -LiteralPath $oldDll -PathType Leaf)) { throw "missing legacy fixture: $oldDll" }
     $fixture = Join-Path $runRoot "oldsession.dwg"
-    $templateName = (-join @([char]27169, [char]26495, [char]22270)) + ".dwg"
-    Copy-Item -LiteralPath (Join-Path $projectRoot $templateName) -Destination $fixture
+
+    Copy-Item -LiteralPath (& (Join-Path $PSScriptRoot "New-TestDrawing.ps1") -AutoCADDir $AutoCADDir) -Destination $fixture
     $lines = @('(setvar "REPORTERROR" 0)', '(setvar "SECURELOAD" 0)',
         '_.NETLOAD', (Convert-ToQPath $contractsPath),
         '_.NETLOAD', (Convert-ToQPath $oldDll),

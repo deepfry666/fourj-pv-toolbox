@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$AutoCADDir = "D:\cad\AutoCAD 2020",
     [string]$OutputDirectory = "",
     [string]$ContractsPath = "",
@@ -36,11 +36,6 @@ foreach ($assembly in @("acmgd.dll", "acdbmgd.dll", "accoremgd.dll")) {
 }
 
 $outputPath = Join-Path $outputDirectoryFull $OutputName
-$librarySource = Join-Path $sourceRoot `
-    "Library\SupportDetailFixedDetails.dwg"
-if (-not (Test-Path -LiteralPath $librarySource -PathType Leaf)) {
-    throw "The fixed detail library was not found: $librarySource"
-}
 $arguments = @(
     "/nologo", "/target:library", "/platform:x64", "/optimize+", "/warn:4",
     "/utf8output", "/out:$outputPath",
@@ -50,8 +45,7 @@ $arguments = @(
     "/reference:$(Join-Path $AutoCADDir 'accoremgd.dll')",
     "/reference:System.dll", "/reference:System.Core.dll",
     "/reference:System.Drawing.dll", "/reference:System.Windows.Forms.dll",
-    "/reference:System.Xml.dll",
-    "/resource:$librarySource,StructuralToolbox.SupportDetail.SupportDetailFixedDetails.dwg"
+    "/reference:System.Xml.dll"
 )
 $arguments += Get-ChildItem -LiteralPath $sourceRoot -Filter "*.cs" -Recurse |
     Sort-Object FullName | ForEach-Object { $_.FullName }
@@ -68,6 +62,5 @@ if ($PassThru) {
         sha256 = (Get-FileHash -LiteralPath $outputPath `
             -Algorithm SHA256).Hash
         contracts = $contractsFullPath
-        librarySource = $librarySource
     }
 }

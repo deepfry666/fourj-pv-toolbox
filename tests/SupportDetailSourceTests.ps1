@@ -61,9 +61,10 @@ Assert-Condition ($drawing.Contains("STPV_SUPPORT_DETAIL_INSTANCES") -and
     $drawing.Contains("ReadInstanceRecord") -and
     $drawing.Contains("EraseInstanceEntities")) `
     "DWG metadata supports select, read, and instance update"
-Assert-Condition ($drawing.Contains("FixedDetailBlockName") -and
-    $drawing.Contains("FIXED_NODE_DETAILS")) `
-    "only the fixed detail library is intentionally inserted as a block"
+Assert-Condition (-not $drawing.Contains("ReadDwgFile") -and
+    -not $drawing.Contains("database.Insert(") -and
+    $drawing.Contains("DrawNodeSchematics")) `
+    "node schematics are generated from native geometry without importing drawings"
 
 $dialog = Get-Content -LiteralPath (Join-Path $sourceRoot `
     "UI\SupportDetailDialog.cs") -Raw -Encoding UTF8
@@ -77,16 +78,11 @@ Assert-Condition ($dialog.Contains('"PierStations"') -and
     $diagram.Contains("geometry.Triangles[0].BeamPoint")) `
     "custom geometry inputs share a matching datum and symbol diagram"
 
-$library = Join-Path $sourceRoot "Library\SupportDetailFixedDetails.dwg"
-Assert-Condition (Test-Path -LiteralPath $library -PathType Leaf) `
-    "fixed detail library exists"
-Assert-Condition ((Get-Item -LiteralPath $library).Length -gt 100000) `
-    "fixed detail library contains extracted source entities"
-Assert-Condition ($project.Contains("<EmbeddedResource") -and
-    $commands.Contains("GetManifestResourceStream") -and
-    $commands.Contains("SpecialFolder.LocalApplicationData") -and
-    $commands.Contains("File.Copy(temporary, cached, true)")) `
-    "fixed detail library is embedded and repairs the user cache when needed"
+Assert-Condition (-not $project.Contains("<EmbeddedResource") -and
+    -not $commands.Contains("GetManifestResourceStream") -and
+    -not $commands.Contains("ResolveFixedLibraryPath") -and
+    -not (Test-Path -LiteralPath (Join-Path $projectRoot "scripts/new-support-detail-library.ps1"))) `
+    "reference drawings have no embedding, extraction, cache or import path"
 
 $assemblyInfo = Get-Content -LiteralPath (Join-Path $sourceRoot `
     "Properties\AssemblyInfo.cs") -Raw -Encoding UTF8

@@ -1,7 +1,6 @@
 using System;
 using System.Globalization;
 using System.IO;
-using System.Reflection;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
@@ -63,7 +62,7 @@ namespace StructuralToolbox.SupportDetail.Commands
                         document.Database, transaction, settings.OutputLayer);
                     summary = SupportDetailDrawingService.AppendInstance(
                         document.Database, transaction, layerId, build.Geometry,
-                        insertion.Value, instanceId, ResolveFixedLibraryPath());
+                        insertion.Value, instanceId);
                     transaction.Commit();
                 }
                 SupportDetailSettingsStore.Save(settings);
@@ -130,8 +129,7 @@ namespace StructuralToolbox.SupportDetail.Commands
                         document.Database, transaction, settings.OutputLayer);
                     summary = SupportDetailDrawingService.AppendInstance(
                         document.Database, transaction, layerId, build.Geometry,
-                        instance.Origin, instance.InstanceId,
-                        ResolveFixedLibraryPath());
+                        instance.Origin, instance.InstanceId);
                     transaction.Commit();
                 }
                 SupportDetailSettingsStore.Save(settings);
@@ -280,8 +278,7 @@ namespace StructuralToolbox.SupportDetail.Commands
                     SupportDetailDrawSummary first =
                         SupportDetailDrawingService.AppendInstance(
                             document.Database, transaction, layerId,
-                            firstBuild.Geometry, Point3d.Origin, instanceId,
-                            ResolveFixedLibraryPath());
+                            firstBuild.Geometry, Point3d.Origin, instanceId);
                     firstEntityCount = first.EntityCount;
                     SupportDetailInstanceData read =
                         SupportDetailDrawingService.ReadInstanceRecord(
@@ -300,8 +297,7 @@ namespace StructuralToolbox.SupportDetail.Commands
                     SupportDetailDrawSummary second =
                         SupportDetailDrawingService.AppendInstance(
                             document.Database, transaction, layerId,
-                            secondBuild.Geometry, read.Origin, instanceId,
-                            ResolveFixedLibraryPath());
+                            secondBuild.Geometry, read.Origin, instanceId);
                     secondEntityCount = second.EntityCount;
                     SupportDetailInstanceData reread =
                         SupportDetailDrawingService.ReadInstanceRecord(
@@ -461,54 +457,6 @@ namespace StructuralToolbox.SupportDetail.Commands
                     StringComparison.OrdinalIgnoreCase);
         }
 
-        private static string ResolveFixedLibraryPath()
-        {
-            Assembly assembly = typeof(SupportDetailCommands).Assembly;
-            string directory = Path.GetDirectoryName(assembly.Location);
-            if (!String.IsNullOrWhiteSpace(directory))
-            {
-                string adjacent = Path.Combine(directory,
-                    "SupportDetailFixedDetails.dwg");
-                if (File.Exists(adjacent))
-                    return adjacent;
-            }
-
-            const string resourceName =
-                "StructuralToolbox.SupportDetail.SupportDetailFixedDetails.dwg";
-            string version = assembly.GetName().Version == null
-                ? "current" : assembly.GetName().Version.ToString();
-            string cacheDirectory = Path.Combine(
-                Environment.GetFolderPath(
-                    Environment.SpecialFolder.LocalApplicationData),
-                "StructuralToolbox", "support-detail", version);
-            Directory.CreateDirectory(cacheDirectory);
-            string cached = Path.Combine(cacheDirectory,
-                "SupportDetailFixedDetails.dwg");
-            if (File.Exists(cached) && new FileInfo(cached).Length > 0)
-                return cached;
-
-            string temporary = cached + ".tmp-" +
-                Guid.NewGuid().ToString("N");
-            try
-            {
-                using (Stream resource = assembly.GetManifestResourceStream(
-                    resourceName))
-                {
-                    if (resource == null)
-                        return String.Empty;
-                    using (FileStream output = File.Create(temporary))
-                        resource.CopyTo(output);
-                }
-                File.Copy(temporary, cached, true);
-                return File.Exists(cached) ? cached : String.Empty;
-            }
-            finally
-            {
-                if (File.Exists(temporary))
-                    File.Delete(temporary);
-            }
-        }
-
         private static void WriteSummary(Editor editor, string action,
             string instanceId, SupportDetailDrawSummary summary, int erased)
         {
@@ -519,12 +467,6 @@ namespace StructuralToolbox.SupportDetail.Commands
                 summary.DimensionCount, summary.PierCount);
             if (erased > 0)
                 editor.WriteMessage("\n本次替换旧实体 {0} 个。", erased);
-            if (!summary.FixedDetailsInserted)
-            {
-                editor.WriteMessage(
-                    "\n固定节点库文件未找到，已生成简化节点占位；" +
-                    "主支架和参数回读不受影响。");
-            }
             editor.WriteMessage(
                 "\n可选中任意构件后运行 STPVSUPPORTDETAILEDIT 修改。 ");
         }

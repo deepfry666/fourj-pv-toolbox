@@ -1,11 +1,9 @@
-param([string]$AutoCADDir = "D:\cad\AutoCAD 2020")
+﻿param([string]$AutoCADDir = "D:\cad\AutoCAD 2020")
 
 $ErrorActionPreference = "Stop"
 $projectRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
 $coreConsole = Join-Path $AutoCADDir "accoreconsole.exe"
-$templateName = ([string][char]0x6A21) + ([char]0x677F) +
-    ([char]0x56FE) + ".dwg"
-$template = Join-Path $projectRoot $templateName
+$template = & (Join-Path $PSScriptRoot "New-TestDrawing.ps1") -AutoCADDir $AutoCADDir
 foreach ($path in @($coreConsole, $template)) {
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
         throw "AutoCAD verification dependency was not found: $path"

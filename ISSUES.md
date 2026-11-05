@@ -1,14 +1,31 @@
 # 项目问题清单
 
+- [x] `ISSUE-0059` 彻底移除第三方参考图纸及固定详图库依赖，让公开源码和测试无需私人图纸。
+  - 来源：用户明确要求参考图纸全部去掉，并直接完成两个项目整理。
+  - 范围：移除详图库嵌入、提取、缓存和插入链路；CAD 测试改用自主生成的样例；检查公开历史与发行产物。
+  - 验收：无参考图纸随源码和安装包分发；独立支架模块不再加载外部详图库；相关纯代码和 AutoCAD 测试通过。
+  - 完成日期：2026-11-05。完整回归、六 DLL 构建、候选安装包检查及自主图纸的支架/翻译/阵列/配重 CAD 验证通过；7 个公开历史安装包及其中 37 个 DLL 未发现图纸资源。旧私有库的远端删除由用户手动处理，见 ISSUE-0061。
+
+- [x] `ISSUE-0060` 主仓库改为无发行后缀的 `deepfry666/fourj-pv-toolbox`，统一源码、文档和稳定更新入口。
+  - 来源：用户要求不用后缀，直接改完两个项目。
+  - 范围：更新仓库引用、发行脚本及更新源；验证旧地址到新仓库的清单和资产兼容；整理旧库与开发入口。
+  - 验收：新仓库公开可访问，旧客户端可读取有效稳定清单并下载匹配安装包，后续发行只使用新仓库。
+  - 完成日期：2026-11-05。已改名，旧、新清单匿名请求均为 200 且哈希相同；旧清单安装包下载、大小与 SHA-256 校验通过；当前配置和发布脚本使用新仓库。详情见 REPOSITORY_MIGRATION.md。
+
+- [ ] `ISSUE-0061` 所有者手动删除已归档的旧私有源码库 `SijiPVToolbox-AutoCAD2020`。
+  - 状态：交由用户手动处理；GitHub CLI 缺少 delete_repo 权限，用户已明确表示无权限操作由本人完成。
+  - 准备：所有分支/标签已备份为去除图纸、图片和编译产物的源码历史 bundle，并通过 bundle verify；公开主仓库与旧发行地址重定向已核验。
+  - 注意：删除的是旧私有源码库，不是已改名的公开发行主库，也不要重建 SijiPVToolbox-Releases 这一旧名称。
+
 - [x] `ISSUE-0057` 将已审查的源码快照导入现有公开发行仓库，统一源码与更新维护。
   - 范围：补充 MIT 许可和维护说明；排除工程 DWG、历史构建产物与私人截图；不导入私有 Git 历史，不改更新地址、版本标签或已发布安装包。
   - 验收：公开文件集与密钥复核通过；代码及更新配置与基线差异可追溯；旧发行资产保持不变。
   - 完成日期：2026-10-21。
-  - 验证：370 文件公开快照已通过独立披露审查和最终 Gitleaks 扫描，C# / PowerShell 与基线一致；[PR #1](https://github.com/deepfry666/SijiPVToolbox-Releases/pull/1) 已合并，远端源码树与已审清单一致；原 7 个标签、7 个 Release 及资产元数据未变，匿名读取 stable.json 成功且内容哈希不变。Windows / AutoCAD 运行仍由 ISSUE-0058 跟踪，不视为本项通过的内容。
+  - 验证：370 文件公开快照已通过独立披露审查和最终 Gitleaks 扫描，C# / PowerShell 与基线一致；[PR #1](https://github.com/deepfry666/fourj-pv-toolbox/pull/1) 已合并，远端源码树与已审清单一致；原 7 个标签、7 个 Release 及资产元数据未变，匿名读取 stable.json 成功且内容哈希不变。Windows / AutoCAD 运行仍由 ISSUE-0058 跟踪，不视为本项通过的内容。
 
 - [ ] `ISSUE-0058` 在具备 Windows / AutoCAD 2020 的环境验证公开快照的正式构建与资源准备流程。
-  - 状态：待平台验证；本轮 macOS 仅做仓库整理，不发布新安装包。工程 DWG 与未确认授权的内置节点库不进入公开快照。
-  - 验收：自备有权使用的测试图纸后执行相关 CAD 检查；完成公开源码的正式构建、安装及升级后配置保留验证，不用源码静态检查代替实机运行。
+  - 状态：Windows 六 DLL、完整回归、候选构建及自主样例 CAD 检查已完成；用户实际环境的交互 GUI、安装升级和配置保留仍待单独验收。
+  - 验收：测试资源使用代码生成的样例；完成真实安装升级和配置保留验证，不用源码或 Core Console 检查代替人工 GUI 验收。本轮没有发布或覆盖新安装包。
 
 - [x] `ISSUE-0056` 本机升级辅助验证把会持续追加的翻译运行日志当作设置文件，导致 v1.0.8 安装成功后误判配置变化并回退。
   - 状态：已完成；日志作为可追加文件单独验证，七个实际配置/缓存仍严格校验。
@@ -22,7 +39,7 @@
   - 完成日期：2026-10-12。
   - 验证：翻译模块 15 文件与 4e098b0 一致，仅版本元数据变化；20 项标注退役回归、完整回归、六 DLL CAD 无标注类型/命令/资源、翻译替换/重开及安装器验证通过。GitHub 四资产下载回验一致；安装器 2245217 字节，SHA-256 为 4E28C12289ED004F74067757508B69ED97B12A945A877A960E4250B73726DC20。
   - 本机验证：系统安装及注册表均为 1.0.8，六 DLL 版本/哈希匹配发布候选，STPVRAILDIM/STPVRAILANNOTATE/GDBZ 均已撤下，七个设置/缓存文件不变；备份 work/install-v1.0.8/backup-1.0.7-20261012-161403，安装证据 work/install-v1.0.8/install-status.json。
-  - 发布地址：https://github.com/deepfry666/SijiPVToolbox-Releases/releases/tag/v1.0.8；详细记录 docs/安装器验证记录_v1.0.8.md。
+  - 发布地址：https://github.com/deepfry666/fourj-pv-toolbox/releases/tag/v1.0.8；详细记录 docs/安装器验证记录_v1.0.8.md。
   - 来源：用户于 2026-10-12 明确要求“把导轨标注全部去掉，最新版本换成上次做完的翻译那个版本”；已自行退出 AutoCAD，同意继续安装。
   - 验收要求：主工具箱及独立交付不再提供导轨标注入口、命令、脚本资源或模块；翻译代码与完成基线一致，保留直接替换/确认后替换；完整回归、CAD 和安装器验证通过；GitHub latest 和本机安装均切换到新版本，用户设置及原始图纸不变。
 
@@ -58,18 +75,18 @@
   - 完成日期：2026-10-12。
   - 最终验证：GitHub v1.0.6 已公开，源码 tag 为 a570929；安装器、stable.json、sha256.txt、release.json 下载回验一致。核查日志和资产位于 `work/github-latest-audit-20261012`，此版即本次合并的标注基线。
   - 2026-10-12 已完成：全部版本号改为 `1.0.6` / `1.0.6.0`，新增 `scripts/installer/release-v1.0.6.json`（GUID 与 `v1.0.5` 一致）、`CHANGELOG.md` 的 `v1.0.6` 节、`docs/current/release-notes-v1.0.6.md` 和 `v1.0.6` 安装、实施、验证记录；Linux 上 `Test-ReleaseReadiness.ps1 -Version 1.0.6 -Phase Source` 的通过项与阻塞项与 `v1.0.5` 基线一致，阻塞项只来自缺少 Windows/AutoCAD/构建工具。
-  - 2026-10-12 用户确认由 JJ 的 Windows 机器构建发布；云端代理复查后仍无法执行：`list-self-hosted-workers` 返回 0 个已连接 worker，无 SSH/WinRM 配置；`gh api repos/deepfry666/SijiPVToolbox-Releases` 显示 `push=false`，不能创建 Release。Releases 最新仍为 `v1.0.5`，`v1.0.6` 标签不存在。需在 JJ 机器上按 `docs/安装器实施记录_v1.0.6.md` 执行，或在该机器运行 `cursor worker start` 后由代理接管。
+  - 2026-10-12 用户确认由 JJ 的 Windows 机器构建发布；云端代理复查后仍无法执行：`list-self-hosted-workers` 返回 0 个已连接 worker，无 SSH/WinRM 配置；`gh api repos/deepfry666/fourj-pv-toolbox` 显示 `push=false`，不能创建 Release。Releases 最新仍为 `v1.0.5`，`v1.0.6` 标签不存在。需在 JJ 机器上按 `docs/安装器实施记录_v1.0.6.md` 执行，或在该机器运行 `cursor worker start` 后由代理接管。
   - 标签说明：`Publish-UpdateRelease.ps1` 会在发布记录的 `sourceCommit` 上创建并推送 `v1.0.6`，若标签已指向其他提交会失败，因此不提前打标签；发布提交必须包含重新构建的五个 DLL。具体步骤见 `docs/安装器实施记录_v1.0.6.md`。
-  - 当前阻塞：正式构建脚本要求 Windows、已安装且由 Autodesk 签名的 AutoCAD 2020（`acad.exe`、`acmgd.dll` 等）、.NET Framework `csc.exe` 和 Inno Setup；发布脚本需要对 `deepfry666/SijiPVToolbox-Releases` 具有写权限的 `gh`。云端 Linux 代理环境均不具备，不能生成或伪造正式安装器。
+  - 当前阻塞：正式构建脚本要求 Windows、已安装且由 Autodesk 签名的 AutoCAD 2020（`acad.exe`、`acmgd.dll` 等）、.NET Framework `csc.exe` 和 Inno Setup；发布脚本需要对 `deepfry666/fourj-pv-toolbox` 具有写权限的 `gh`。云端 Linux 代理环境均不具备，不能生成或伪造正式安装器。
   - 验收要求：在维护者 Windows 机器上依次通过 `Build-ReleaseCandidate.ps1 -Version 1.0.6 -RunInstallerRuntimeTest`、AutoCAD 2020 验证、`Publish-TestRelease.ps1`、`New-UpdateRelease.ps1` 和 `Publish-UpdateRelease.ps1`；GitHub latest Release 为 `v1.0.6`，含安装器、`stable.json`、`sha256.txt`、`release.json`，`stable.json` 版本为 `1.0.6` 且 `mirrors` 为空；已安装 `v1.0.5` 能在“检查软件更新”页发现并校验下载 `v1.0.6`；`%APPDATA%\StructuralToolbox` 设置升级后保留。
 
 - [x] `ISSUE-0048` GitHub 最新正式版 v1.0.6 已增加导轨对齐标注，但未包含已在翻译开发分支接入主工具箱的图纸文字翻译模块。
   - 状态：已完成；两功能已整合到 main 并发布为 v1.0.7。
   - 完成日期：2026-10-12。
   - 最终验证：完整回归、六 DLL 构建、CAD 实际命令注册/656 导轨/原尺寸不变、翻译换行替换和保存重开、安装器隔离升级/回滚/卸载均通过；Published 体检 61 项通过。GitHub latest 为公开非预发布 v1.0.7，源码 tag 固定指向 58a1a538d02ab8d11949df00638fa206084b6ef0，四个发布资产下载回验一致；安装器 2261425 字节，SHA-256 为 C442E51EC19017C8E34FD3C2830B6A00BA3137F2E5D11E7240F3FF9B0345BE1E。使用 v1.0.6 更新核心及 .NET Framework 4.7 测试宿主，从实际 latest 地址发现并校验下载 1.0.7 成功。
-  - 发布地址：https://github.com/deepfry666/SijiPVToolbox-Releases/releases/tag/v1.0.7；详细证据见 `docs/安装器验证记录_v1.0.7.md`。
+  - 发布地址：https://github.com/deepfry666/fourj-pv-toolbox/releases/tag/v1.0.7；详细证据见 `docs/安装器验证记录_v1.0.7.md`。
   - 来源：用户于 2026-10-12 反馈新版本已发布后发现翻译功能不在其中。
-  - 核查证据：发布仓库 `deepfry666/SijiPVToolbox-Releases` 的 latest 为 `v1.0.6`，发布时间为 2026-10-12 14:57:27（北京时间）；`release.json` 指向源码 `a57092975ded06659f24a61b7eda85a1aed54cc6`，下载安装器 SHA-256 与清单一致，为 `3BA7766D55560CDC8A15C113F027471BBBB0A488F948761438A9F5EAC4ADC75D`。该源码的主构建只列五个 DLL，Bundle 没有 `StructuralToolbox.DrawingTranslation.dll` 或翻译命令。
+  - 核查证据：发布仓库 `deepfry666/fourj-pv-toolbox` 的 latest 为 `v1.0.6`，发布时间为 2026-10-12 14:57:27（北京时间）；`release.json` 指向源码 `a57092975ded06659f24a61b7eda85a1aed54cc6`，下载安装器 SHA-256 与清单一致，为 `3BA7766D55560CDC8A15C113F027471BBBB0A488F948761438A9F5EAC4ADC75D`。该源码的主构建只列五个 DLL，Bundle 没有 `StructuralToolbox.DrawingTranslation.dll` 或翻译命令。
   - 分支关系：`v1.0.6` 与 `codex/update-delivery` 的共同基线为 `8ccc084`；翻译接入提交 `be41241` 及修正提交 `ba5f976` 均不在 `v1.0.6` 历史中。核查时“直接替换/确认后替换”最终调整仍是本地未提交修改；本次已在 `4e098b0` 提交并推送。
   - 验收要求：在保留 v1.0.6 导轨对齐标注的基础上整合翻译模块及最终两种替换模式；独立翻译、主构建、Bundle、安装器和 CAD 验证通过后发布新补丁版，并下载回验安装包与更新清单。
 
@@ -195,7 +212,7 @@
   - 定版方向：保留 `Closed=true` 的现有行为；当 `Closed=false` 时读取首尾点并按明确的毫米容差判断几何闭合，容差内接受并去掉重复末点，超出容差继续拒绝且报告实际缺口；只改变识别结果，不修改原图实体属性。
   - 实施进展（2026-09-17）：轻量和旧式多段线已统一使用几何闭合判定，闭合容差为 `0.1 mm`；首尾重合点会在四边形判断前规范化。15 项阵列识别核心测试、配重模块专项测试、两个实际模块构建及完整 `scripts/test.ps1` 回归通过。`v1.0.5` 候选、安装器隔离运行、AutoCAD 2020 五模块加载、正式输出及 GitHub 下载回验均已通过。
   - 完成日期：2026-09-17。
-  - 最终验证：`v1.0.5` 已发布为 GitHub latest Release，非草稿、非预发布；线上 `stable.json` 为 `1.0.5`，安装包地址直接指向 GitHub 版本资产且 `mirrors` 为空；安装器、`stable.json`、`sha256.txt`、`release.json` 四个资产全部下载回验，远端安装器为 `2210227` 字节，SHA-256 为 `2C6EFABE54021C6376D8712F3930F7C4E762340D738CB5062C687CF248464A4A`。Release：`https://github.com/deepfry666/SijiPVToolbox-Releases/releases/tag/v1.0.5`，源码 tag `v1.0.5` 指向 `2b8f4a3185d4de62424faf7861af4f0ec81e8c6e`。
+  - 最终验证：`v1.0.5` 已发布为 GitHub latest Release，非草稿、非预发布；线上 `stable.json` 为 `1.0.5`，安装包地址直接指向 GitHub 版本资产且 `mirrors` 为空；安装器、`stable.json`、`sha256.txt`、`release.json` 四个资产全部下载回验，远端安装器为 `2210227` 字节，SHA-256 为 `2C6EFABE54021C6376D8712F3930F7C4E762340D738CB5062C687CF248464A4A`。Release：`https://github.com/deepfry666/fourj-pv-toolbox/releases/tag/v1.0.5`，源码 tag `v1.0.5` 指向 `2b8f4a3185d4de62424faf7861af4f0ec81e8c6e`。
   - 验收要求：轻量和旧式多段线共用同一闭合规则；首尾完全重合及容差内近闭合可识别为组件，明显开口仍被拒绝并报告缺口；独立阵列识别和正式配重模块回归通过；发布补丁版本并完成 GitHub Release 下载回验。
 
 - [x] `ISSUE-0021` 完整回归脚本在 Windows PowerShell 5 下因无 BOM 的 UTF-8 中文路径解析失败，导致导轨标注源码检查无法定位 `导轨对齐标注.lsp`。
@@ -338,7 +355,7 @@
   - 实施进展（2026-09-17）：客户端已删除 VPS 清单地址，只保留 GitHub `latest/download/stable.json`；发行准备脚本不再生成 `vps/` 目录，发行脚本不再接受 SSH 部署参数；18 项 GitHub 单源专项测试和完整 `scripts/test.ps1` 回归通过。待完成补丁版本候选、AutoCAD 2020、安装器和 GitHub 正式发行回验后关闭本问题。
   - 发行进展（2026-09-17）：`v1.0.4` 候选、安装器隔离运行、AutoCAD 2020 五模块加载和本地正式输出已通过；正式安装器 SHA-256 为 `B213814E334A62108D2BE13CD428C45F31E4EDF77592298D80D23A202D3B20D2`。
   - 完成日期：2026-09-17。
-  - 最终验证：`v1.0.4` 已发布为 GitHub latest Release，非草稿、非预发布；线上 `stable.json` 为 `1.0.4`，安装包地址直接指向 GitHub 版本资产且 `mirrors` 为空；安装器、`stable.json`、`sha256.txt`、`release.json` 四个资产全部下载回验，远端安装器为 `2209879` 字节，SHA-256 与正式输出一致。Release：`https://github.com/deepfry666/SijiPVToolbox-Releases/releases/tag/v1.0.4`，源码 tag `v1.0.4` 指向 `6ffd98d042109b2bbecb172050cd787c76ec7c91`。
+  - 最终验证：`v1.0.4` 已发布为 GitHub latest Release，非草稿、非预发布；线上 `stable.json` 为 `1.0.4`，安装包地址直接指向 GitHub 版本资产且 `mirrors` 为空；安装器、`stable.json`、`sha256.txt`、`release.json` 四个资产全部下载回验，远端安装器为 `2209879` 字节，SHA-256 与正式输出一致。Release：`https://github.com/deepfry666/fourj-pv-toolbox/releases/tag/v1.0.4`，源码 tag `v1.0.4` 指向 `6ffd98d042109b2bbecb172050cd787c76ec7c91`。
 
 - [x] `ISSUE-0031` 正式安装器与真实图纸验证器计算源码指纹时使用的模块范围不一致，导致已通过安装器校验的候选无法进入真实图纸验证。
   - 状态：已完成；安装器构建、制品校验、证据和归档均已把链接编译的阵列识别源码纳入指纹。

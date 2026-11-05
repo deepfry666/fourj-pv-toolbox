@@ -4,10 +4,10 @@
 - Keep source code and scripts under `src/` and `scripts/`.
 - Keep temporary build and verification files under `work/`.
 - Keep release packages and user-facing deliverables under `outputs/`.
-- Source code and releases are maintained together at `deepfry666/SijiPVToolbox-Releases`; generated packages stay ignored locally and are uploaded as Release assets, not committed to Git.
+- Source code and releases are maintained together at `deepfry666/fourj-pv-toolbox`; generated packages stay ignored locally and are uploaded as Release assets, not committed to Git.
 - Never publish engineering DWG/DXF files, private screenshots, local settings, or the former private Git history. Public snapshot boundaries and developer-machine migration are documented in `OPEN_SOURCE.md`.
-- Do not place project artifacts under `Documents/Codex` or other temporary roots.
-- Never overwrite the original DWG template in the project root. Test with a copy under `work/` or `outputs/`.
+- Keep project artifacts within this checkout under ignored `work/` and `outputs/`; do not scatter files into other project roots.
+- Never reintroduce third-party reference drawings, extracted fixed-detail libraries, or their loading/cache paths. CAD tests use `scripts/New-TestDrawing.ps1` and self-generated geometry under `work/`; an explicit user-owned input is tested only through a copy.
 - Develop every new feature for the Four Seasons PV Toolbox as an independent module first, with its own testable output. Integrate it into the main toolbox only after the standalone feature has been fully tested and is stable.
 - After each completed project change, create a dedicated Git commit and push it to the configured remote repository. Keep unrelated changes out of the commit, and report any commit or push failure explicitly.
 

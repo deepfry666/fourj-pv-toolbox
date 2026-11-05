@@ -53,8 +53,8 @@ $profilesRegistryPath = "Registry::HKEY_CURRENT_USER\$profilesRegistrySubKey"
 $verificationProfile = "<<未命名配置>>"
 
 if ([string]::IsNullOrWhiteSpace($InputDwg)) {
-    $templateName = -join @([char]27169, [char]26495, [char]22270) + ".dwg"
-    $InputDwg = Join-Path $projectRoot $templateName
+
+    $InputDwg = & (Join-Path $PSScriptRoot "New-TestDrawing.ps1") -AutoCADDir $AutoCADDir
 }
 $InputDwg = [IO.Path]::GetFullPath($InputDwg)
 if (-not (Test-Path -LiteralPath $InputDwg -PathType Leaf)) {

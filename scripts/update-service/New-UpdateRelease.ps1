@@ -5,7 +5,7 @@ param(
     [Parameter(Mandatory=$true)][string]$SourceRef,
     [Parameter(Mandatory=$true)][string]$NotesPath,
     [Parameter(Mandatory=$true)][datetime]$ReleaseDate,
-    [ValidatePattern('^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$')][string]$GitHubRepository = "deepfry666/SijiPVToolbox-Releases",
+    [ValidatePattern('^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$')][string]$GitHubRepository = "deepfry666/fourj-pv-toolbox",
     [string]$OutputDirectory
 )
 $ErrorActionPreference = "Stop"

@@ -6,15 +6,15 @@
 
 ## 下载与使用
 
-- [下载正式安装包与校验文件](https://github.com/deepfry666/SijiPVToolbox-Releases/releases/latest)
-- 当前公开稳定版：`v1.0.8`。安装前保存图纸，完全退出 AutoCAD / 探索者，安装后重启 AutoCAD，输入 `JJJJ` 打开工具箱。
+- [下载正式安装包与校验文件](https://github.com/deepfry666/fourj-pv-toolbox/releases/latest)
+- 当前发布版本为`v1.0.8`，程序集版本 `1.0.8.0`。安装前保存图纸，完全退出 AutoCAD / 探索者，安装后重启 AutoCAD，输入 `JJJJ` 打开工具箱。
 - 仅 AutoCAD 2020 Win64 R23.1 属于既有验证范围；不承诺其他 CAD、AutoCAD LT 或 macOS 兼容。
 - 安装包尚未进行 Windows 代码签名，请确认来源并核对 SHA-256；校验值不能替代发布者身份签名。
 
 ## 开发入口
 
 ```powershell
-git clone https://github.com/deepfry666/SijiPVToolbox-Releases.git FourJ-PV-Toolbox
+git clone https://github.com/deepfry666/fourj-pv-toolbox.git FourJ-PV-Toolbox
 cd FourJ-PV-Toolbox
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build.ps1 -AutoCADDir "D:\cad\AutoCAD 2020"
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test.ps1
@@ -22,7 +22,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test.ps1
 
 正式构建需要 Windows、真实 AutoCAD 2020 和 .NET Framework；安装器还需要 Inno Setup。生成产物保存在忽略的本地目录，安装包通过 GitHub Releases 分发，不提交到 Git。
 
-本次公开源码整理没有重新构建或发布安装包。部分 CAD 测试和历史支架独立模块需要自备有权使用的 DWG，历史追溯检查还可能需要原始备份；缺少资源和平台时不能宣称完整回归通过。
+本次公开源码整理没有重新构建或发布安装包。CAD 测试使用代码生成的空白毫米图及测试几何；第三方参考图纸和固定详图库的依赖已移除。历史追溯检查仍可能需要原始构建回执。
 
 ## 文档
 

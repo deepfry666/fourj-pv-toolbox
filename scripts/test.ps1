@@ -276,6 +276,8 @@ Invoke-RegressionScript (Join-Path $projectRoot `
     "tests\UpdateServiceTests.ps1")
 Invoke-RegressionScript (Join-Path $projectRoot `
     "tests\UpdateUiResponsivenessSourceTests.ps1")
+Invoke-RegressionScript (Join-Path $projectRoot `
+    "tests\ReferenceResourceBoundaryTests.ps1")
 
 Write-Host "RELEASE_VERSION=1.0.8"
 Write-Host ("SOURCE_CODE_SHA256=" + (Get-SourceCodeFingerprint))

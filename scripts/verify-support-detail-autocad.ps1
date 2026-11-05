@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$AutoCADDir = "D:\cad\AutoCAD 2020",
     [string]$InputDwg = "",
     [string]$ModuleDirectory = ""
@@ -15,12 +15,10 @@ $reopenScript = Join-Path $verificationRoot "reopen.scr"
 $firstLog = Join-Path $verificationRoot "generate-update.log"
 $reopenLog = Join-Path $verificationRoot "reopen.log"
 $render = Join-Path $verificationRoot "support-detail-check.png"
-$librarySource = Join-Path $projectRoot `
-    "src\StructuralToolbox.SupportDetail\Library\SupportDetailFixedDetails.dwg"
 
 if ([String]::IsNullOrWhiteSpace($InputDwg)) {
-    $templateName = (-join @([char]27169, [char]26495, [char]22270)) + ".dwg"
-    $InputDwg = Join-Path $projectRoot $templateName
+
+    $InputDwg = & (Join-Path $PSScriptRoot "New-TestDrawing.ps1") -AutoCADDir $AutoCADDir
 }
 $InputDwg = [IO.Path]::GetFullPath($InputDwg)
 if (-not (Test-Path -LiteralPath $InputDwg -PathType Leaf)) {
@@ -41,7 +39,6 @@ if ([String]::IsNullOrWhiteSpace($ModuleDirectory)) {
     $modulePath = Join-Path $moduleRoot "StructuralToolbox.SupportDetail.dll"
     $build = [pscustomobject]@{
         path = $modulePath
-        librarySource = $librarySource
         sha256 = if (Test-Path -LiteralPath $modulePath -PathType Leaf) {
             (Get-FileHash -LiteralPath $modulePath -Algorithm SHA256).Hash
         } else {
@@ -49,19 +46,13 @@ if ([String]::IsNullOrWhiteSpace($ModuleDirectory)) {
         }
     }
 }
-if (-not (Test-Path -LiteralPath $build.path -PathType Leaf) -or
-    [String]::IsNullOrWhiteSpace([string]$build.librarySource) -or
-    -not (Test-Path -LiteralPath $build.librarySource -PathType Leaf)) {
-    throw "Support detail build did not produce the DLL or fixed library source."
+if (-not (Test-Path -LiteralPath $build.path -PathType Leaf)) {
+    throw "Support detail build did not produce a DLL."
 }
-$resourceName =
-    "StructuralToolbox.SupportDetail.SupportDetailFixedDetails.dwg"
 $resourceAssembly = [Reflection.Assembly]::LoadFrom($build.path)
-if ($resourceAssembly.GetManifestResourceNames() -notcontains $resourceName) {
-    throw "Support detail DLL does not contain the fixed detail library resource."
+if (@($resourceAssembly.GetManifestResourceNames() | Where-Object { $_ -match '\.(dwg|dxf)$' }).Count -ne 0) {
+    throw "Reference drawings must not be embedded in the support module."
 }
-$libraryHashBefore = (Get-FileHash -LiteralPath $build.librarySource `
-    -Algorithm SHA256).Hash
 $moduleRelative = $build.path.Substring($projectRoot.Length)
 $moduleRelative = $moduleRelative.TrimStart("\").Replace("\", "/")
 
@@ -157,16 +148,9 @@ $sourceHashAfter = (Get-FileHash -LiteralPath $InputDwg -Algorithm SHA256).Hash
 if ($sourceHashAfter -ne $sourceHashBefore) {
     throw "Verification changed the original input DWG."
 }
-$libraryHashAfter = (Get-FileHash -LiteralPath $build.librarySource `
-    -Algorithm SHA256).Hash
-if ($libraryHashAfter -ne $libraryHashBefore) {
-    throw "Verification changed the fixed detail library."
-}
-
 Write-Host "SUPPORT_DETAIL_AUTOCAD2020=PASS"
 Write-Host "ORIGINAL_SHA256=$sourceHashAfter"
 Write-Host "OUTPUT_DWG=$inputCopy"
 Write-Host "OUTPUT_PNG=$render"
 Write-Host "MODULE_SHA256=$($build.sha256)"
-Write-Host "FIXED_LIBRARY_EMBEDDED=PASS"
-Write-Host "FIXED_LIBRARY_SOURCE_SHA256=$libraryHashAfter"
+Write-Host "REFERENCE_DRAWINGS_ABSENT=PASS"

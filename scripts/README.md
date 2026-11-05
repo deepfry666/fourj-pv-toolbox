@@ -22,3 +22,5 @@
 旧版 `package.ps1`、`install.ps1`、`uninstall.ps1` 和中文 `.cmd` 入口只用于安全拒绝和引导，不是开发入口。
 
 所有脚本使用 UTF-8 BOM，以兼容 Windows PowerShell 5。脚本输出和构建临时物必须留在 `work/`，不要在根目录创建测试副本。
+
+CAD 测试无需外部模板：`New-TestDrawing.ps1` 从空数据库生成种子；各测试自行添加样例实体。历史 VPS 站点脚本不参与当前发行，唯一发布入口为 `update-service/New-UpdateRelease.ps1` 和 `Publish-UpdateRelease.ps1`。

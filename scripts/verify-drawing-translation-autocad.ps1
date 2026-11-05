@@ -1,11 +1,11 @@
-param([string]$AutoCADDir = "D:\cad\AutoCAD 2020")
+﻿param([string]$AutoCADDir = "D:\cad\AutoCAD 2020")
 
 $ErrorActionPreference = "Stop"
 $projectRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
 $compiler = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
 $coreConsole = Join-Path $AutoCADDir "accoreconsole.exe"
-$templateName = (-join @([char]27169, [char]26495, [char]22270)) + ".dwg"
-$template = Join-Path $projectRoot $templateName
+
+$template = & (Join-Path $PSScriptRoot "New-TestDrawing.ps1") -AutoCADDir $AutoCADDir
 foreach ($required in @($compiler, $coreConsole, $template)) {
     if (-not (Test-Path -LiteralPath $required -PathType Leaf)) {
         throw "Required verification file was not found: $required"
