@@ -1,14 +1,17 @@
 # 项目问题清单
 
-- [ ] `ISSUE-0076` 将在线安装包大小强制校验修复交付为 v1.0.14 稳定补丁并完成更新闭环。
+- [x] `ISSUE-0076` 将在线安装包大小强制校验修复交付为 v1.0.14 稳定补丁并完成更新闭环。
   - 来源：自主推进软件更新，PR #13 已复现并修复 ISSUE-0075。
   - 验收：六 DLL/Bundle/安装器/标签/清单统一版本；大小边界/无副作用拒绝/缓存复用/回退/取消/哈希/原子下载、本地兼容、UI 和完整回归通过；真实 CAD 主模块/翻译及隔离安装/升级/回滚/卸载通过；草稿四资产回验后公开 latest，新旧客户端实际检查/下载校验。保留原图/用户设置/历史发行，不自动升级本机正式安装，不冒称真实 API 或完整 GUI 人工验收已完成。
   - 2026-11-06 进展：最终候选、Source/Built 49/56 项、更新核心边界/异常恢复及完整回归、独立翻译/API/缓存/UI、真实 CAD 和隔离安装/升级/回滚/卸载通过。1.0.13→1.0.14 隔离升级和反向降级拒绝通过，正式安装/设置不变。候选大小 2,249,097 字节，SHA-256 6A612C5B9261E499ECBDB6599F592DD767C2893DE187C8043405BEA1F51C8539；待 GitHub 发行及在线回验，见 docs/安装器验证记录_v1.0.14.md。
+  - 完成日期：2026-11-06。PR #13/#14 已合并，v1.0.14 于 22:21:51（北京时间）公开为 latest，非草稿/预发布。源码 tag/release.json 绑定 4ed9a44573bd9a0bf06e20410a8c7afe2369eca2；四资产草稿下载回验一致，1.0.8 已安装、1.0.13 已发行冻结候选和 1.0.14 当前更新模块均通过新旧清单、版本判断及实际大小/SHA-256 下载校验。Published 体检 61 项和 124 项原图/历史交付哈希保护通过，本机正式安装仍为 1.0.8。本批完成后按用户要求停止后续自动排查和发版。
+  - 发行：https://github.com/deepfry666/fourj-pv-toolbox/releases/tag/v1.0.14；证据 work/v114-github-publish-netfx.log、work/release-download-check-netfx-v114-d11d03e1f9b84535b7fa41e4cdb5064d、work/v114-live-clients、work/v114-installed-v108.log、work/v114-released-v113.log、work/v114-current-v114.log、work/v114-latest-release.json、work/v114-published-readiness.log、work/v114-originals-protection.log。CLI 上传/查询遇到 HTTP 408/TLS 超时后，使用既有登录凭据及官方 API 在独立 .NET Framework 进程完成同一草稿的四资产上传、摘要/大小检查和实际下载回验，再公开；凭据仅在进程内使用，未写入项目。
 
 - [x] `ISSUE-0075` 在线更新清单缺少 sizeBytes、声明零字节或超过 512 MiB 时仍可通过检查，缺失大小还会使下载跳过预期长度校验。
   - 来源：2026-11-06 离线注入传输复现，HTTPS FetchManifest 分别接受 SizeBytes=-1、0、536870913；与 ISSUE-0029 的在线更新不得跳过大小/SHA-256 校验要求不一致。证据 work/update-size-before.log。
   - 验收：HTTPS 清单必须声明 1 字节～512 MiB 的有效大小（上限含边界），异常清单检查阶段拒绝；直接网络下载也校验，包括复用缓存前，不创建文件或发起请求；大小错误不替换已有文件。纯本地文件清单的历史兼容保持，回退/取消/哈希/原子下载和完整回归通过，不修改线上资产。
   - 完成日期：2026-11-06，开发源码修复，尚未发行。work/update-size-before-tests.log 先复现 8 项失败；修复后缺失/零/超限检查拒绝、1 字节/512 MiB 边界、有效回退、API 直接下载与缓存复用前拒绝、无网络/目录/临时文件副作用、实际短/长文件长度不匹配且哈希正确仍拒绝、旧文件保留及本地旧清单兼容通过。六 DLL 构建和完整回归通过，修改后的真实更新模块对当前 v1.0.13 新旧清单及实际安装包下载校验也通过，未运行安装器或改线上资产。证据 work/update-size-core-tests.log、work/update-size-main-build.log、work/update-size-regression.log、work/update-size-live-client.log、work/update-size-live-client/result.json。
+  - 发行补充：2026-11-06 已随 v1.0.14 稳定补丁公开，四资产及新旧更新模块回验通过，见 ISSUE-0076。
 
 - [x] `ISSUE-0074` 将 MText 完整段落控制码保护修复交付为 v1.0.13 稳定补丁并验证在线更新。
   - 来源：自主推进软件更新，PR #11 已复现并修复 ISSUE-0073。
