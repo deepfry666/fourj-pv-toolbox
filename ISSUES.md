@@ -1,5 +1,10 @@
 # 项目问题清单
 
+- [x] `ISSUE-0065` 主模块 AutoCAD 验证器默认使用空白自生成图，却直接要求存在组件矩形，导致无外部图纸环境下发布验证失败。
+  - 来源：2026-11-06 v1.0.9 发布验证确认：六 DLL 已加载并通过身份检查，默认 blank-mm.dwg 无组件，内部验证在扫描后失败。
+  - 验收：验证器默认使用自主生成的组件矩形和既有原生尺寸，验证实际导轨生成且尺寸保留；空白种子继续供其他测试使用，不重新引入私人图纸，CAD 验证与完整回归通过。
+  - 完成日期：2026-11-06。新增 RailsOnly 自生成种子（24 组件、1 原生尺寸）并单独缓存；实际六 DLL 验证为 MODULES=6、RAILS=8、DIMENSIONS_UNCHANGED=True，work/verification-v1.0.9/runs/20261106-192546。默认空白种子的翻译/保存重开/一次撤销、阵列及配重 CAD 验证和完整候选回归均通过，日志 work/v109-translation-cad.log、work/v109-array-cad.log、work/v109-ballast-cad.log、work/v109-candidate.log。
+
 - [x] `ISSUE-0063` README 更新介绍后，发布体检仍固定匹配旧的“当前发布版本为”句式，导致正式六 DLL 已构建但完整回归失败。
   - 来源：2026-11-06 执行最新 main 基线的完整回归和 Built 体检确认；README 明确显示当前正式版 v1.0.8 和程序集 1.0.8.0，脚本误报版本缺失。
   - 验收：发布体检读取当前版本说明，容许 Markdown 强调和新旧说明句式，仍拒绝错误版本；Built 体检、ReleaseWorkflowTests 和完整回归通过。
