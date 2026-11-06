@@ -8,8 +8,8 @@ using StructuralToolbox.Commands;
 [assembly: AssemblyCompany("FourJTooLs")]
 [assembly: AssemblyProduct("四季光伏工具箱内部实图验证程序集")]
 [assembly: AssemblyConfiguration("INTERNAL_VERIFY")]
-[assembly: AssemblyVersion("1.0.12.0")]
-[assembly: AssemblyFileVersion("1.0.12.0")]
+[assembly: AssemblyVersion("1.0.13.0")]
+[assembly: AssemblyFileVersion("1.0.13.0")]
 [assembly: CommandClass(typeof(RailCommands))]
 
 namespace FourJTools.Verification
