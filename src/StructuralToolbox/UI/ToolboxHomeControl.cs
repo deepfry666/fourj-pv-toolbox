@@ -52,7 +52,7 @@ namespace StructuralToolbox.UI
 
             Label version = new Label();
             version.Name = "ToolboxVersion";
-            version.Text = "版本 1.0.10";
+            version.Text = "版本 1.0.11";
             version.AutoSize = true;
             version.ForeColor = Color.FromArgb(105, 108, 114);
             version.Margin = new Padding(0, 0, 0, 18);
