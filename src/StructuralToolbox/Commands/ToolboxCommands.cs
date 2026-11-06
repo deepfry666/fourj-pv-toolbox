@@ -55,7 +55,7 @@ namespace StructuralToolbox.Commands
         public void ShowAbout()
         {
             AcApplication.ShowAlertDialog(
-                "四季光伏工具箱 1.0.8\n" +
+                "四季光伏工具箱 1.0.9\n" +
                 "功能：自动画导轨、自动布置配重、图纸文字翻译、检查软件更新\n" +
                 "命令：JJJJ / STPVRAIL / STPVBALLAST / STPVTRANSLATE / STPVTRANSLATECONFIRM\n" +
                 "核心运行已验证：AutoCAD 2020 (R23.1) Win64\n" +

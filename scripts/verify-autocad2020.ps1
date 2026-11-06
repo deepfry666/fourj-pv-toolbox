@@ -54,7 +54,7 @@ $verificationProfile = "<<未命名配置>>"
 
 if ([string]::IsNullOrWhiteSpace($InputDwg)) {
 
-    $InputDwg = & (Join-Path $PSScriptRoot "New-TestDrawing.ps1") -AutoCADDir $AutoCADDir
+    $InputDwg = & (Join-Path $PSScriptRoot "New-TestDrawing.ps1") -AutoCADDir $AutoCADDir -Kind RailsOnly
 }
 $InputDwg = [IO.Path]::GetFullPath($InputDwg)
 if (-not (Test-Path -LiteralPath $InputDwg -PathType Leaf)) {

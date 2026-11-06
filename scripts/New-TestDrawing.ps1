@@ -1,8 +1,12 @@
-﻿param([string]$AutoCADDir = "D:\cad\AutoCAD 2020")
+﻿param(
+    [string]$AutoCADDir = "D:\cad\AutoCAD 2020",
+    [ValidateSet('Blank', 'RailsOnly')][string]$Kind = 'Blank'
+)
 
 $ErrorActionPreference = "Stop"
 $projectRoot = [IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
 $runRoot = Join-Path $projectRoot "work\generated-test-drawing"
+if ($Kind -ne 'Blank') { $runRoot = Join-Path $runRoot $Kind }
 $output = Join-Path $runRoot "blank-mm.dwg"
 $receipt = Join-Path $runRoot "receipt.json"
 $source = Join-Path $projectRoot "tests\GeneratedTestDrawing.cs"
@@ -34,8 +38,10 @@ if (-not $drive) { throw "No free drive is available for the isolated CAD fixtur
 & subst.exe ($drive + ':') $runRoot
 if ($LASTEXITCODE -ne 0) { throw "Cannot map the fixture directory." }
 $previousOutput = $env:FOURJ_TEST_DRAWING_OUTPUT
+$previousKind = $env:FOURJ_TEST_DRAWING_KIND
 try {
     $env:FOURJ_TEST_DRAWING_OUTPUT = $output
+    $env:FOURJ_TEST_DRAWING_KIND = $Kind
     $script = Join-Path $runRoot "generate.scr"
     [IO.File]::WriteAllLines($script, @(
         '(setvar "SECURELOAD" 0)', '_.NETLOAD',
@@ -62,6 +68,7 @@ try {
         ConvertTo-Json | Set-Content -LiteralPath $receipt -Encoding UTF8
 } finally {
     $env:FOURJ_TEST_DRAWING_OUTPUT = $previousOutput
+    $env:FOURJ_TEST_DRAWING_KIND = $previousKind
     & subst.exe ($drive + ':') /D | Out-Null
 }
 return $output
