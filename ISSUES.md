@@ -1,5 +1,10 @@
 # 项目问题清单
 
+- [x] `ISSUE-0069` 多行块属性按单行 TextString 读取，翻译时丢失段落/行内格式，且确认期间仅格式变化无法触发原文变化保护。
+  - 来源：2026-11-06 真实 AutoCAD 自主样例确认：属性内部 Contents 含颜色码和段落，TextString 只返回去格式的空格合并文字；当前保护模板未包含这些格式，写入后颜色和换行丢失。
+  - 验收：多行属性使用内部 MText.Contents 进行原文读取、占位符保护及写前核对，普通属性保持 TextString；格式与段落在替换、保存重开、一次撤销后正确保留；只改格式时也按原文变化跳过，现有属性/翻译/API/UI 和完整回归通过。测试仅使用 work/ 自主样例，不调用真实翻译服务。
+  - 完成日期：2026-11-06，开发源码修复，尚未发行。真实 CAD 先复现格式/段落未进入保护模板，修复后颜色及段落占位符还原、只改颜色判为 stale、用户格式保留、保存重开和 DBText/MText/格式属性的一次 U 撤销均通过；翻译核心/API/缓存/四档 DPI/WinForms 交互、六 DLL 构建和完整回归通过。证据 work/attribute-format-probe-summary.log、work/attribute-content-before-cad.log、work/attribute-content-fixed-cad.log（work/drawing-translation-db11343a0efb4d7f9481d12c96ae8015）、work/attribute-content-module-tests.log、work/attribute-content-main-build.log、work/attribute-content-regression.log。
+
 - [x] `ISSUE-0068` 将缓存故障恢复和 JSON 容量限制修复交付为 v1.0.10 稳定补丁，并验证 GitHub 更新闭环。
   - 来源：用户授权自主推进软件更新和 bug 排查，PR #5 已实现并验证 ISSUE-0066、0067。
   - 验收：六 DLL、Bundle、安装器、公开源码标签和稳定更新清单版本一致；缓存边界/翻译/API/UI、完整回归、CAD 替换/重开/撤销、主模块以及隔离安装/升级/回滚/卸载通过；四资产草稿下载回验后公开为 latest；1.0.8/1.0.9 更新客户端能发现、下载并校验 1.0.10，历史资产保持不变。真实 API/完整 GUI 人工验收仍不在自动化结论内，不自动升级本机正式安装。

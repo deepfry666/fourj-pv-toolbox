@@ -23,7 +23,7 @@ internal static class DrawingTranslationLayoutCadTests
 
     internal static void CheckReopen(Database database)
     {
-        int free = 0, rotations = 0, attributes = 0, blocked = 0;
+        int free = 0, rotations = 0, attributes = 0, blocked = 0, formatted = 0;
         MText upper = null, lower = null;
         using (Transaction tx = database.TransactionManager.StartOpenCloseTransaction())
         {
@@ -51,9 +51,13 @@ internal static class DrawingTranslationLayoutCadTests
                         using (MText content = attribute.MTextAttribute)
                             if (content.Contents.Contains("Equipment foundation") &&
                                 content.ActualWidth <= 240.01 && content.ActualHeight > 10) attributes++;
+                    if (attribute.Tag == "FORMATTED" && attribute.IsMTextAttribute)
+                        using (MText content = attribute.MTextAttribute)
+                            if (content.Contents == "{\\C2;Equipment}\\PFoundation" &&
+                                content.Width == 240 && attribute.Height == 10) formatted++;
                 }
             }
-            Require(free == 1 && rotations == 7 && attributes == 2 && blocked == 1 &&
+            Require(free == 1 && rotations == 7 && attributes == 2 && formatted == 1 && blocked == 1 &&
                 upper != null && lower != null && lower.TextHeight >= 7.5 && lower.TextHeight < 10 &&
                 upper.GeometricExtents.MinPoint.Y > lower.GeometricExtents.MaxPoint.Y,
                 "fitted, wrapped or retained text changed after save/reopen");
@@ -72,6 +76,7 @@ internal static class DrawingTranslationLayoutCadTests
             Model(database, tx).AppendEntity(text); tx.AddNewlyCreatedDBObject(text, true); tx.Commit();
         }
         AddMText(database, 2000, 1000, 240, AttachmentPoint.TopLeft, "设备基础");
+        AddFormattedAttribute(database, 3000, "UNDO_FORMATTED", "{\\C1;设备}\\P基础");
     }
 
     internal static void UndoApply(Database database)
@@ -79,13 +84,19 @@ internal static class DrawingTranslationLayoutCadTests
         List<ObjectId> ids = new List<ObjectId>();
         using (Transaction tx = database.TransactionManager.StartOpenCloseTransaction())
         {
-            foreach (ObjectId id in Model(database, tx)) ids.Add(id);
+            foreach (ObjectId id in Model(database, tx))
+            {
+                BlockReference block = tx.GetObject(id, OpenMode.ForRead) as BlockReference;
+                if (block == null) ids.Add(id);
+                else foreach (ObjectId attribute in block.AttributeCollection) ids.Add(attribute);
+            }
             tx.Commit();
         }
         int skipped;
         Require(Write(database, ids.ToArray(), new[] {
-            "STPV undo translated support note", "STPV undo translated equipment note" },
-            out skipped) == 2 && skipped == 0, "UNDO fixture did not translate both objects");
+            "STPV undo translated support note", "STPV undo translated equipment note",
+            "{\\C1;Equipment}\\PFoundation" },
+            out skipped) == 3 && skipped == 0, "UNDO fixture did not translate all three text kinds");
     }
 
     internal static void UndoCheck(Database database)
@@ -100,8 +111,17 @@ internal static class DrawingTranslationLayoutCadTests
                 MText mtext = tx.GetObject(id, OpenMode.ForRead) as MText;
                 if (text != null && text.TextString == "光伏组件支架基础安装说明") found++;
                 if (mtext != null && mtext.Contents == "设备基础" && mtext.TextHeight == 10) found++;
+                BlockReference block = tx.GetObject(id, OpenMode.ForRead) as BlockReference;
+                if (block != null)
+                    foreach (ObjectId attributeId in block.AttributeCollection)
+                    {
+                        AttributeReference attribute = (AttributeReference)tx.GetObject(attributeId, OpenMode.ForRead);
+                        using (MText contents = attribute.MTextAttribute)
+                            if (attribute.Tag == "UNDO_FORMATTED" && attribute.Height == 10 &&
+                                contents.Contents == "{\\C1;设备}\\P基础") found++;
+                    }
             }
-            Require(count == 2 && found == 2, "one UNDO did not restore original text, types and height");
+            Require(count == 3 && found == 3, "one UNDO did not restore text, attribute formatting, types and height");
             tx.Commit();
         }
     }
@@ -263,7 +283,78 @@ internal static class DrawingTranslationLayoutCadTests
             tx.Commit();
         }
         CheckMultilineAttribute(database);
+        CheckFormattedAttribute(database);
         Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\nLAYOUT_ATTRIBUTE_PASS single-and-multiline");
+    }
+
+    private static void CheckFormattedAttribute(Database database)
+    {
+        const string original = "{\\C1;设备}\\P基础";
+        ObjectId id = AddFormattedAttribute(database, 64000, "FORMATTED", original);
+        int skipped;
+        IList<TranslationTarget> targets = TranslationCommands.ReadTargets(database, new[] { id }, out skipped);
+        Require(targets.Count == 1 && skipped == 0 && targets[0].Item.RawContent == original,
+            "multiline attribute source discarded paragraphs or inline formatting");
+        string translated, error;
+        Require(targets[0].Item.Protection.TryRestore(
+            targets[0].Item.TranslatableContent.Replace("设备", "Equipment").Replace("基础", "Foundation"),
+            out translated, out error) && translated == "{\\C1;Equipment}\\PFoundation",
+            "multiline attribute formatting was not protected/restored");
+        int stale, layout;
+        Require(TranslationCommands.ReplaceEdits(database,
+            new[] { new TranslationEdit(targets[0], translated) }, out stale, out layout) == 1 &&
+            stale == 0 && layout == 0, "formatted attribute translation was not written");
+        targets = TranslationCommands.ReadTargets(database, new[] { id }, out skipped);
+        using (Transaction tx = database.TransactionManager.StartTransaction())
+        {
+            AttributeReference attribute = (AttributeReference)tx.GetObject(id, OpenMode.ForWrite);
+            using (MText text = attribute.MTextAttribute)
+            {
+                Require(text.Contents == translated && text.ActualHeight > 10,
+                    "formatted attribute lost its colour or paragraph on write");
+                text.Contents = translated.Replace("\\C1;", "\\C2;");
+                attribute.MTextAttribute = text;
+            }
+            tx.Commit();
+        }
+        Require(TranslationCommands.ReplaceEdits(database,
+            new[] { new TranslationEdit(targets[0], "Should not overwrite changed formatting") },
+            out stale, out layout) == 0 && stale == 1 && layout == 0,
+            "format-only source edit was not detected as stale");
+        using (Transaction tx = database.TransactionManager.StartOpenCloseTransaction())
+        {
+            AttributeReference attribute = (AttributeReference)tx.GetObject(id, OpenMode.ForRead);
+            using (MText text = attribute.MTextAttribute)
+                Require(text.Contents == "{\\C2;Equipment}\\PFoundation",
+                    "stale attribute did not retain the user's changed formatting");
+            tx.Commit();
+        }
+        Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\nATTRIBUTE_FORMAT_AND_STALE_PASS");
+    }
+
+    private static ObjectId AddFormattedAttribute(Database database, double x, string tag, string contents)
+    {
+        using (Transaction tx = database.TransactionManager.StartTransaction())
+        {
+            BlockTable blocks = (BlockTable)tx.GetObject(database.BlockTableId, OpenMode.ForWrite);
+            BlockTableRecord definition = new BlockTableRecord();
+            definition.Name = "STPV_" + tag + "_" + Guid.NewGuid().ToString("N");
+            ObjectId definitionId = blocks.Add(definition); tx.AddNewlyCreatedDBObject(definition, true);
+            AttributeDefinition field = new AttributeDefinition(); field.SetDatabaseDefaults(database);
+            field.Tag = tag; field.TextString = "设备基础"; field.Height = 10;
+            field.IsMTextAttributeDefinition = true;
+            using (MText text = field.MTextAttributeDefinition)
+            {
+                text.Width = 240; text.TextHeight = 10; text.Contents = contents;
+                field.MTextAttributeDefinition = text;
+            }
+            definition.AppendEntity(field); tx.AddNewlyCreatedDBObject(field, true);
+            BlockReference block = new BlockReference(new Point3d(x, 1000, 0), definitionId);
+            Model(database, tx).AppendEntity(block); tx.AddNewlyCreatedDBObject(block, true);
+            AttributeReference attribute = new AttributeReference(); attribute.SetAttributeFromBlock(field, block.BlockTransform);
+            ObjectId id = block.AttributeCollection.AppendAttribute(attribute);
+            tx.AddNewlyCreatedDBObject(attribute, true); tx.Commit(); return id;
+        }
     }
 
     private static void CheckMultilineAttribute(Database database)
