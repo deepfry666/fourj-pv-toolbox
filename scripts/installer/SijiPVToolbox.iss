@@ -8,10 +8,10 @@
 #endif
 
 #ifndef AppVersion
-  #define AppVersion "1.0.11"
+  #define AppVersion "1.0.12"
 #endif
 #ifndef AssemblyVersion
-  #define AssemblyVersion "1.0.11.0"
+  #define AssemblyVersion "1.0.12.0"
 #endif
 #ifndef InstallerAppId
   #define InstallerAppId "0DB1FAD5-EC98-434F-8AF6-E16B3462A678"
@@ -41,7 +41,7 @@
   #define OutputDir "."
 #endif
 #ifndef OutputBaseFilename
-  #define OutputBaseFilename "四季光伏工具箱_Setup_v1.0.11"
+  #define OutputBaseFilename "四季光伏工具箱_Setup_v1.0.12"
 #endif
 #ifndef VerifiedSeries
   #define VerifiedSeries "R23.1"
