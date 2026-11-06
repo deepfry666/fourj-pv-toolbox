@@ -38,6 +38,7 @@ namespace StructuralToolbox.DrawingTranslation.Api
         {
             _path = path;
             _entries = LoadEntries(path);
+            Trim();
         }
 
         internal static TranslationCache ForCurrentUser()
@@ -53,15 +54,16 @@ namespace StructuralToolbox.DrawingTranslation.Api
             out string translation)
         {
             translation = String.Empty;
+            string key = Key(settings, source);
             CacheEntry entry;
-            if (!_entries.TryGetValue(Key(settings, source), out entry) ||
-                entry == null || String.IsNullOrWhiteSpace(entry.Translation))
+            if (!_entries.TryGetValue(key, out entry))
                 return false;
-            DateTime created = new DateTime(entry.CreatedUtcTicks,
-                DateTimeKind.Utc);
-            if ((DateTime.UtcNow - created).TotalDays > settings.CacheDays)
+            long now = DateTime.UtcNow.Ticks;
+            int days = settings.CacheDays <= 0 ? 30 : Math.Min(365, settings.CacheDays);
+            if (!Usable(entry, now) ||
+                now - entry.CreatedUtcTicks > TimeSpan.FromDays(days).Ticks)
             {
-                _entries.Remove(Key(settings, source));
+                _entries.Remove(key);
                 return false;
             }
             translation = entry.Translation;
@@ -116,6 +118,11 @@ namespace StructuralToolbox.DrawingTranslation.Api
 
         private void Trim()
         {
+            long now = DateTime.UtcNow.Ticks;
+            List<string> damaged = new List<string>();
+            foreach (KeyValuePair<string, CacheEntry> entry in _entries)
+                if (!Usable(entry.Value, now)) damaged.Add(entry.Key);
+            foreach (string key in damaged) _entries.Remove(key);
             if (_entries.Count <= MaximumEntries)
                 return;
             List<KeyValuePair<string, CacheEntry>> ordered =
@@ -129,6 +136,14 @@ namespace StructuralToolbox.DrawingTranslation.Api
             int remove = _entries.Count - MaximumEntries;
             for (int index = 0; index < remove; index++)
                 _entries.Remove(ordered[index].Key);
+        }
+
+        private static bool Usable(CacheEntry entry, long now)
+        {
+            // Validate file timestamps without constructing a DateTime: corrupt
+            // ticks and future records must never interrupt network translation.
+            return entry != null && !String.IsNullOrWhiteSpace(entry.Translation) &&
+                entry.CreatedUtcTicks > 0 && entry.CreatedUtcTicks <= now;
         }
 
         private void Save()

@@ -19,6 +19,7 @@ internal static class DrawingTranslationApiTests
             CheckSettings();
             CheckCacheAndProgress().GetAwaiter().GetResult();
             CheckLegacyVerboseCache();
+            DrawingTranslationCacheTests.Run();
             CheckEndpointResolution();
             CheckProxySettings();
             CheckTranslation().GetAwaiter().GetResult();
