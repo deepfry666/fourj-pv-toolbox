@@ -1,19 +1,23 @@
 # 项目问题清单
 
-- [ ] `ISSUE-0068` 将缓存故障恢复和 JSON 容量限制修复交付为 v1.0.10 稳定补丁，并验证 GitHub 更新闭环。
+- [x] `ISSUE-0068` 将缓存故障恢复和 JSON 容量限制修复交付为 v1.0.10 稳定补丁，并验证 GitHub 更新闭环。
   - 来源：用户授权自主推进软件更新和 bug 排查，PR #5 已实现并验证 ISSUE-0066、0067。
   - 验收：六 DLL、Bundle、安装器、公开源码标签和稳定更新清单版本一致；缓存边界/翻译/API/UI、完整回归、CAD 替换/重开/撤销、主模块以及隔离安装/升级/回滚/卸载通过；四资产草稿下载回验后公开为 latest；1.0.8/1.0.9 更新客户端能发现、下载并校验 1.0.10，历史资产保持不变。真实 API/完整 GUI 人工验收仍不在自动化结论内，不自动升级本机正式安装。
   - 2026-11-06 进展：候选、Source/Built 体检、完整回归、缓存/翻译/API/UI、主模块/翻译/阵列/配重 CAD、隔离安装/升级/回滚/卸载均通过。额外执行 1.0.9→1.0.10 隔离升级及 1.0.10→1.0.9 降级拒绝，六 DLL 匹配候选且正式安装/设置不变。候选大小 2,248,648 字节，SHA-256 BD775C6E267414F0C928E333912FFC37068BB7E8A429BEE449BD4259014F02AF；待发行及线上回验，见 docs/安装器验证记录_v1.0.10.md。
+  - 完成日期：2026-11-06。PR #5/#6 均已合并，v1.0.10 于 19:57:58（北京时间）公开为 latest，四资产草稿下载回验一致，源码 tag/release.json 固定指向 58213b551efb52bad774428c607fbf64df36e30d。1.0.8 正式已安装、1.0.9 已发行冻结候选及 1.0.10 当前更新模块均匿名读取新旧清单、正确判断版本并成功下载校验；Published 体检 61 项通过，100 项本机原图和历史交付哈希保护通过。正式本机安装仍为 1.0.8。
+  - 发行：https://github.com/deepfry666/fourj-pv-toolbox/releases/tag/v1.0.10；证据 work/v110-github-publish-retry.log、work/release-download-check-d9c01607017648999a59b24ad5bc0365、work/v110-live-clients、work/v110-installed-v108.log、work/v110-released-v109.log、work/v110-current-v110.log、work/v110-published-readiness.log、work/v110-originals-protection.log。首次发布在列举 Release 时网络超时，最终重试成功；失败尝试未作为通过证据。
 
 - [x] `ISSUE-0067` 译文缓存只限制 2000 条而不限制 JSON 总长度，较长译文累积后保存会抛异常并中断已成功返回的翻译。
   - 来源：2026-11-06 离线探针确认：1800 条缓存约 2,021,401 字节，追加一条长说明后触发 JavaScriptSerializer 的 maxJsonLength 异常；缓存条数仍未达上限。
   - 验收：按序列化后的实际字符预算限制缓存并优先保留新有效条目；无法容纳的单条长译文不缓存但不影响翻译结果；转义放大、容量淘汰、保存重开和有效条目保留有离线覆盖，翻译模块及完整回归通过。测试只操作 work/ 下样例。
   - 完成日期：2026-11-06，开发源码修复，尚未发行。先以 work/cache-size-before.log、work/cache-size-before-tests.log 复现 maxJsonLength 异常；修复后累计长文本按 JSON 2,097,152 字符预算淘汰旧条目，3,000,000 字符单条及 500,000 控制字符转义放大均安全跳过缓存，有效条目可持久化重开。独立翻译/API/UI、六 DLL 主构建和完整回归通过；work/cache-size-module-tests.log、work/cache-size-main-build.log、work/cache-size-regression.log。
+  - 发行补充：2026-11-06 已随 v1.0.10 稳定补丁公开，安装器和新旧客户端回验通过，见 ISSUE-0068。
 
 - [x] `ISSUE-0066` 译文缓存中的无效时间戳、空记录和空译文可中断翻译，超量或损坏文件的清理也缺少恢复保护。
   - 来源：2026-11-06 发布后异常路径检查确认，当前公开源码直接以文件值构造 DateTime，Trim 直接读取可能为空的记录；缓存是可选加速，不应让损坏条目阻断正常翻译。
   - 验收：无效/未来时间戳、空记录和空译文视为未命中，其他有效条目可用；加载和写入限制 2000 条；损坏 JSON 可恢复写入；离线复现、持久化回归、翻译模块及完整回归通过；不更改用户真实缓存或配置。
   - 完成日期：2026-11-06，开发源码修复，尚未发行。work/cache-recovery-before.log 先复现 ArgumentOutOfRangeException；修复后负数/超界/零/未来时间戳、空条目/空白译文、过期、2005 条容量淘汰、损坏 JSON 持久化恢复、文件锁定及恢复均通过；翻译 API/UI、六 DLL 构建和完整 scripts/test.ps1 通过。证据 work/cache-recovery-module-tests.log、work/cache-recovery-main-build.log、work/cache-recovery-regression.log；测试仅使用 work/tests 下独立缓存。
+  - 发行补充：2026-11-06 已随 v1.0.10 稳定补丁公开，安装器和新旧客户端回验通过，见 ISSUE-0068。
 
 - [x] `ISSUE-0065` 主模块 AutoCAD 验证器默认使用空白自生成图，却直接要求存在组件矩形，导致无外部图纸环境下发布验证失败。
   - 来源：2026-11-06 v1.0.9 发布验证确认：六 DLL 已加载并通过身份检查，默认 blank-mm.dwg 无组件，内部验证在扫描后失败。
