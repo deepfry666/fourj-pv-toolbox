@@ -109,7 +109,7 @@ namespace StructuralToolbox.Commands
     {
         internal const string ToolRegAppName = "FOURJTOOLS";
         internal const string RailEntityKind = "RAIL";
-        internal const string ToolEntityVersion = "1.0.8";
+        internal const string ToolEntityVersion = "1.0.9";
         private const string StructuredMetadataMarker = "META_V3";
         private const string LegacyRailLayerName = "导轨";
 

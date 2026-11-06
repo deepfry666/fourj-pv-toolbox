@@ -280,7 +280,7 @@ Invoke-RegressionScript (Join-Path $projectRoot `
 Invoke-RegressionScript (Join-Path $projectRoot `
     "tests\ReferenceResourceBoundaryTests.ps1")
 
-Write-Host "RELEASE_VERSION=1.0.8"
+Write-Host "RELEASE_VERSION=1.0.9"
 Write-Host ("SOURCE_CODE_SHA256=" + (Get-SourceCodeFingerprint))
 Write-Host ("REGRESSION_SUITE_SHA256=" +
     (Get-RegressionSuiteFingerprint $projectRoot))
