@@ -116,11 +116,11 @@ namespace StructuralToolbox.Commands
             for (int index = 0; index < modules.Length; index++)
             {
                 if (!Equals(modules[index].GetName().Version,
-                    new Version(1, 0, 13, 0)))
+                    new Version(1, 0, 14, 0)))
                 {
                     throw new InvalidOperationException(
                         modules[index].GetName().Name +
-                        " version is not 1.0.13.0.");
+                        " version is not 1.0.14.0.");
                 }
                 string directory = Path.GetDirectoryName(
                     Path.GetFullPath(modules[index].Location));
