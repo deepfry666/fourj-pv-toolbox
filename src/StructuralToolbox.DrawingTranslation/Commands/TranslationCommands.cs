@@ -567,7 +567,7 @@ namespace StructuralToolbox.DrawingTranslation.Commands
                         }
                         AddText(targets, id, -1, -1,
                             entity.Handle.ToString(), DrawingTextKind.AttributeReference,
-                            attribute.TextString, attribute.HasFields,
+                            ReadAttributeContent(attribute), attribute.HasFields,
                             ref skipped, reasons);
                         continue;
                     }
@@ -785,7 +785,7 @@ namespace StructuralToolbox.DrawingTranslation.Commands
             {
                 AttributeReference attribute = entity as AttributeReference;
                 return attribute == null || attribute.HasFields
-                    ? null : attribute.TextString;
+                    ? null : ReadAttributeContent(attribute);
             }
             if (target.Item.Kind == DrawingTextKind.DbText)
             {
@@ -806,6 +806,17 @@ namespace StructuralToolbox.DrawingTranslation.Commands
             if (!IsPlainCell(cell))
                 return null;
             return cell.Contents[0].TextString;
+        }
+
+        private static string ReadAttributeContent(AttributeReference attribute)
+        {
+            if (!attribute.IsMTextAttribute)
+                return attribute.TextString;
+            // TextString flattens multiline attributes, losing paragraph and
+            // inline format codes. Use the same raw content for protection and
+            // stale checks that the layout writer ultimately replaces.
+            using (MText text = attribute.MTextAttribute)
+                return text == null ? null : text.Contents;
         }
 
         private static bool IsWritableOwner(Transaction transaction,
