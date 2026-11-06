@@ -1,5 +1,15 @@
 # 项目问题清单
 
+- [x] `ISSUE-0067` 译文缓存只限制 2000 条而不限制 JSON 总长度，较长译文累积后保存会抛异常并中断已成功返回的翻译。
+  - 来源：2026-11-06 离线探针确认：1800 条缓存约 2,021,401 字节，追加一条长说明后触发 JavaScriptSerializer 的 maxJsonLength 异常；缓存条数仍未达上限。
+  - 验收：按序列化后的实际字符预算限制缓存并优先保留新有效条目；无法容纳的单条长译文不缓存但不影响翻译结果；转义放大、容量淘汰、保存重开和有效条目保留有离线覆盖，翻译模块及完整回归通过。测试只操作 work/ 下样例。
+  - 完成日期：2026-11-06，开发源码修复，尚未发行。先以 work/cache-size-before.log、work/cache-size-before-tests.log 复现 maxJsonLength 异常；修复后累计长文本按 JSON 2,097,152 字符预算淘汰旧条目，3,000,000 字符单条及 500,000 控制字符转义放大均安全跳过缓存，有效条目可持久化重开。独立翻译/API/UI、六 DLL 主构建和完整回归通过；work/cache-size-module-tests.log、work/cache-size-main-build.log、work/cache-size-regression.log。
+
+- [x] `ISSUE-0066` 译文缓存中的无效时间戳、空记录和空译文可中断翻译，超量或损坏文件的清理也缺少恢复保护。
+  - 来源：2026-11-06 发布后异常路径检查确认，当前公开源码直接以文件值构造 DateTime，Trim 直接读取可能为空的记录；缓存是可选加速，不应让损坏条目阻断正常翻译。
+  - 验收：无效/未来时间戳、空记录和空译文视为未命中，其他有效条目可用；加载和写入限制 2000 条；损坏 JSON 可恢复写入；离线复现、持久化回归、翻译模块及完整回归通过；不更改用户真实缓存或配置。
+  - 完成日期：2026-11-06，开发源码修复，尚未发行。work/cache-recovery-before.log 先复现 ArgumentOutOfRangeException；修复后负数/超界/零/未来时间戳、空条目/空白译文、过期、2005 条容量淘汰、损坏 JSON 持久化恢复、文件锁定及恢复均通过；翻译 API/UI、六 DLL 构建和完整 scripts/test.ps1 通过。证据 work/cache-recovery-module-tests.log、work/cache-recovery-main-build.log、work/cache-recovery-regression.log；测试仅使用 work/tests 下独立缓存。
+
 - [x] `ISSUE-0065` 主模块 AutoCAD 验证器默认使用空白自生成图，却直接要求存在组件矩形，导致无外部图纸环境下发布验证失败。
   - 来源：2026-11-06 v1.0.9 发布验证确认：六 DLL 已加载并通过身份检查，默认 blank-mm.dwg 无组件，内部验证在扫描后失败。
   - 验收：验证器默认使用自主生成的组件矩形和既有原生尺寸，验证实际导轨生成且尺寸保留；空白种子继续供其他测试使用，不重新引入私人图纸，CAD 验证与完整回归通过。

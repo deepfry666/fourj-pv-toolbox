@@ -35,6 +35,7 @@ $apiOutput = Join-Path $testDirectory "DrawingTranslationApiTests.exe"
 $apiSources = @(
     (Join-Path $projectRoot "src\StructuralToolbox.DrawingTranslation\Api\TranslationApi.cs"),
     (Join-Path $projectRoot "src\StructuralToolbox.DrawingTranslation\Api\TranslationCache.cs"),
+    (Join-Path $projectRoot "tests\DrawingTranslationCacheTests.cs"),
     (Join-Path $projectRoot "tests\DrawingTranslationApiTests.cs")
 )
 & $compiler /nologo /target:exe /optimize+ /utf8output `
