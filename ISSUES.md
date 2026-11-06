@@ -5,11 +5,13 @@
   - 验收：验证器默认使用自主生成的组件矩形和既有原生尺寸，验证实际导轨生成且尺寸保留；空白种子继续供其他测试使用，不重新引入私人图纸，CAD 验证与完整回归通过。
   - 完成日期：2026-11-06。新增 RailsOnly 自生成种子（24 组件、1 原生尺寸）并单独缓存；实际六 DLL 验证为 MODULES=6、RAILS=8、DIMENSIONS_UNCHANGED=True，work/verification-v1.0.9/runs/20261106-192546。默认空白种子的翻译/保存重开/一次撤销、阵列及配重 CAD 验证和完整候选回归均通过，日志 work/v109-translation-cad.log、work/v109-array-cad.log、work/v109-ballast-cad.log、work/v109-candidate.log。
 
-- [ ] `ISSUE-0064` 将已合并的长英文排版修复发布为新稳定版，并确认已安装版本可通过 GitHub 在线发现和校验下载。
+- [x] `ISSUE-0064` 将已合并的长英文排版修复发布为新稳定版，并确认已安装版本可通过 GitHub 在线发现和校验下载。
   - 来源：用户于 2026-11-06 明确要求“发布新版”。
   - 计划版本：v1.0.9 / 1.0.9.0；PR #3 已合并，沿用原安装器与 Bundle 升级身份，不覆盖旧标签和资产。
   - 验收：六 DLL 版本、Bundle、安装器、源码提交/tag 和 stable.json 一致；独立翻译、完整回归、真实 AutoCAD、自主测试图及安装器隔离升级/回滚/卸载通过；四个 Release 资产先草稿下载回验再设为 latest；新旧更新客户端实际下载校验通过。真实 API 和 GUI 人工验收未完成的边界保留说明，不冒称已通过，不自动升级本机正式安装。
   - 2026-11-06 进展：最终候选、完整回归、六 DLL/版本体检、翻译/主模块/阵列/配重 CAD、安装器隔离安装/升级/回滚/卸载及设置保护均通过。候选为 2,248,236 字节，SHA-256 A421FD5E2A09FE622A03CBAE45B6D7A10B48EE35E6F84E01169FD44634C14C2B；待公开发行及线上更新回验，详细证据见 docs/安装器验证记录_v1.0.9.md。
+  - 完成日期：2026-11-06。PR #3/#4 均已合并；v1.0.9 于 19:30:44（北京时间）公开为 latest，非草稿、非预发布，源码 tag 和 release.json 绑定公开提交 234515ff9c47dbddfe70647073f41d539ed13061。四资产草稿下载回验一致；当前 1.0.9 与已安装 1.0.8 的真实 .NET Framework 更新模块均通过新旧清单地址、下载、大小及 SHA-256 校验，旧版正确发现 1.0.9，1.0.9 正确判断已是最新。Published 体检 61 项无阻塞，59 项原图/历史交付哈希保护通过，旧 v1.0.8 本地包安全归档。
+  - 发布与证据：https://github.com/deepfry666/fourj-pv-toolbox/releases/tag/v1.0.9；work/v109-github-publish.log、work/v109-current-live.log、work/v109-installed-live.log、work/v109-installed-discovery.log、work/v109-live-clients、work/v109-published-readiness.log、work/v109-originals-protection.log。本机正式安装仍为 1.0.8；本轮未执行真实翻译 API 或完整 GUI 人工验收。
 
 - [x] `ISSUE-0063` README 更新介绍后，发布体检仍固定匹配旧的“当前发布版本为”句式，导致正式六 DLL 已构建但完整回归失败。
   - 来源：2026-11-06 执行最新 main 基线的完整回归和 Built 体检确认；README 明确显示当前正式版 v1.0.8 和程序集 1.0.8.0，脚本误报版本缺失。
