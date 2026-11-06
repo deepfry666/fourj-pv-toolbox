@@ -67,7 +67,7 @@ internal static class ToolboxUiLayoutTests
         string source = File.ReadAllText(palettePath).Replace("\r\n", "\n");
         Require(source.Contains("private const int PaletteLayoutVersion = 6;") &&
             source.Contains("ApplyLayoutMigration();"),
-            "v1.0.9 does not preserve the v1.0.0 palette migration.");
+            "v1.0.10 does not preserve the v1.0.0 palette migration.");
         Require(!source.Contains("PreferredPaletteSize") &&
             !source.Contains("ModulePageShown"),
             "a module can still resize the shared palette while navigating.");
@@ -127,8 +127,8 @@ internal static class ToolboxUiLayoutTests
             "plugin startup source is unavailable for release classification check.");
 
         string source = File.ReadAllText(pluginEntryPath);
-        Require(source.Contains("四季光伏工具箱 1.0.9 已加载。"),
-            "AutoCAD startup message does not identify v1.0.9.");
+        Require(source.Contains("四季光伏工具箱 1.0.10 已加载。"),
+            "AutoCAD startup message does not identify v1.0.10.");
         Require(!source.Contains("TEST_UNSIGNED") &&
             !source.Contains("未签名测试版"),
             "AutoCAD startup message exposes internal signature classification.");
@@ -136,7 +136,7 @@ internal static class ToolboxUiLayoutTests
         string aboutPath = Path.Combine(projectRoot, "src",
             "StructuralToolbox", "Commands", "ToolboxCommands.cs");
         string aboutSource = File.ReadAllText(aboutPath);
-        Require(aboutSource.Contains("四季光伏工具箱 1.0.9") &&
+        Require(aboutSource.Contains("四季光伏工具箱 1.0.10") &&
             !aboutSource.Contains("TEST_UNSIGNED") &&
             !aboutSource.Contains("未签名测试版"),
             "About text exposes stale version or internal signature classification.");
@@ -164,7 +164,7 @@ internal static class ToolboxUiLayoutTests
                 context + ": removed support detail entry is still visible.");
             Require(CountNamed(shell, "OpenAnnotationTool") == 0,
                 context + ": annotation is incorrectly exposed as a home tool.");
-            Require(version.Visible && version.Text == "版本 1.0.9",
+            Require(version.Visible && version.Text == "版本 1.0.10",
                 context + ": visible version is missing or stale.");
             Require(CountNamed(shell, "ReleaseClassification") == 0,
                 context + ": internal signature classification is still visible.");

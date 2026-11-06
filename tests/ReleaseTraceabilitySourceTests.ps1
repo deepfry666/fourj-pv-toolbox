@@ -47,7 +47,7 @@ $releasePublisher = Get-Content -LiteralPath (Join-Path $projectRoot `
 $bundleBuilder = Get-Content -LiteralPath (Join-Path $projectRoot `
     "scripts\installer\New-MultiVersionBundle.ps1") -Raw -Encoding UTF8
 $installerVerificationRecord = Get-Content -LiteralPath (Join-Path $projectRoot `
-    "docs\安装器验证记录_v1.0.9.md") -Raw -Encoding UTF8
+    "docs\安装器验证记录_v1.0.10.md") -Raw -Encoding UTF8
 $publishAtomicityTests = Get-Content -LiteralPath (Join-Path $projectRoot `
     "tests\PublishAtomicityTests.ps1") -Raw -Encoding UTF8
 $archiveRegressionTests = Get-Content -LiteralPath (Join-Path $projectRoot `
@@ -55,7 +55,7 @@ $archiveRegressionTests = Get-Content -LiteralPath (Join-Path $projectRoot `
 $traceabilityAtomicityTests = Get-Content -LiteralPath (Join-Path $projectRoot `
     "tests\ReleaseTraceabilityAtomicityTests.ps1") -Raw -Encoding UTF8
 $release = Get-Content -LiteralPath (Join-Path $projectRoot `
-    "scripts\installer\release-v1.0.9.json") -Raw -Encoding UTF8 |
+    "scripts\installer\release-v1.0.10.json") -Raw -Encoding UTF8 |
     ConvertFrom-Json
 $frozenReleasePath = Join-Path $projectRoot `
     "scripts\installer\release-v0.3.3.json"
@@ -168,13 +168,13 @@ if ([string]$release.currentReleaseClassification -ne "UNSIGNED" -or
 $passed++
 
 if ([version]([string]$frozenRelease.releaseVersion) -ne [version]"0.3.3" -or
-    [version]([string]$release.releaseVersion) -ne [version]"1.0.9") {
-    throw "Stable identity comparison must bind frozen v0.3.3 to current v1.0.9"
+    [version]([string]$release.releaseVersion) -ne [version]"1.0.10") {
+    throw "Stable identity comparison must bind frozen v0.3.3 to current v1.0.10"
 }
 $passed++
 Assert-Contains $railDrawingService `
-    'internal const string ToolEntityVersion = "1.0.9";' `
-    "New drawing entities must carry the current v1.0.9 metadata version"
+    'internal const string ToolEntityVersion = "1.0.10";' `
+    "New drawing entities must carry the current v1.0.10 metadata version"
 $expectedStableGuids = [ordered]@{
     installerAppId = "{0DB1FAD5-EC98-434F-8AF6-E16B3462A678}"
     testInstallerAppId = "{9AB1205B-9640-4A83-A9A0-912285618A0D}"
@@ -192,7 +192,7 @@ foreach ($field in $expectedStableGuids.Keys) {
         throw "Stable release GUID '$field' is missing or invalid"
     }
     if ($frozenGuid -ne $expectedGuid -or $currentGuid -ne $expectedGuid) {
-        throw "Stable release GUID '$field' changed between v0.3.3 and v1.0.9"
+        throw "Stable release GUID '$field' changed between v0.3.3 and v1.0.10"
     }
     $passed++
 }
@@ -320,13 +320,13 @@ Assert-Contains $installerSource 'PipelineInvocation != "FOURJTOOLS_PACKAGE_PIPE
     "Installer source must require the controlled packaging marker"
 Assert-Contains $installerSource 'Signed builds must define SignToolName' `
     "Installer source must fail closed when a formal build has no signer"
-Assert-Contains $installerSource '#define OutputBaseFilename "四季光伏工具箱_Setup_v1.0.9"' `
-    "Installer default output filename must match v1.0.9"
+Assert-Contains $installerSource '#define OutputBaseFilename "四季光伏工具箱_Setup_v1.0.10"' `
+    "Installer default output filename must match v1.0.10"
 
 $verificationSource = Get-Content (Join-Path $projectRoot `
     "src\StructuralToolbox.Rail\Commands\VerificationCommands.cs") -Raw -Encoding UTF8
-Assert-Contains $verificationSource 'new Version(1, 0, 9, 0)' `
-    "AutoCAD verifier must compare release modules against v1.0.9.0"
+Assert-Contains $verificationSource 'new Version(1, 0, 10, 0)' `
+    "AutoCAD verifier must compare release modules against v1.0.10.0"
 Assert-Contains $installerSource 'OutputBaseFilename={#OutputBaseFilename}' `
     "Installer output filename must use the controlled pipeline value"
 Assert-Contains $installerSource 'UnsignedDistributionBuild' `
@@ -707,7 +707,7 @@ Assert-Contains $installerVerificationRecord '原始 DWG 不被测试覆盖' `
     "Installer verification record must protect the original drawing"
 Assert-Contains $cadVerifier 'AutoCADSeries = "R23.1"' `
     "AutoCAD verification evidence must record the exact host series"
-Assert-Contains $verificationCommands 'new Version(1, 0, 9, 0)' `
+Assert-Contains $verificationCommands 'new Version(1, 0, 10, 0)' `
     "CoreConsole verification must attest the current assembly version"
 Assert-Contains $cadVerifier '[switch]$SkipReleaseBuild' `
     "AutoCAD verification must support testing the already packaged DLL"

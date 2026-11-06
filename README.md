@@ -6,7 +6,7 @@
 
 [下载正式安装包](https://github.com/deepfry666/fourj-pv-toolbox/releases/latest) · [快速开始](docs/current/快速开始.md) · [开发文档](docs/current/README.md) · [版本记录](CHANGELOG.md)
 
-> 当前正式版：**v1.0.9**（程序集 `1.0.9.0`）。既有核心运行验证范围为 **AutoCAD 2020 Win64 / R23.1**，不等于完整 GUI、探索者交互或所有安装升级场景已验收；后续验证见 [问题清单](ISSUES.md)。
+> 当前正式版：**v1.0.10**（程序集 `1.0.10.0`）。既有核心运行验证范围为 **AutoCAD 2020 Win64 / R23.1**，不等于完整 GUI、探索者交互或所有安装升级场景已验收；后续验证见 [问题清单](ISSUES.md)。
 
 ![四季光伏工具箱工作流程示意：保存副本、打开工具箱、选择绘图或翻译功能、人工复核成果](docs/assets/workflow.svg)
 
@@ -30,7 +30,7 @@
 
 ## 安装与首次使用
 
-1. 从 [GitHub Releases](https://github.com/deepfry666/fourj-pv-toolbox/releases/latest) 下载安装器及同版 `sha256.txt`。v1.0.9 的安装器资产名为 `FourJ_PV_Toolbox_Setup_v1.0.9.exe`，不要把 Source code 压缩包当作安装包。
+1. 从 [GitHub Releases](https://github.com/deepfry666/fourj-pv-toolbox/releases/latest) 下载安装器及同版 `sha256.txt`。v1.0.10 的安装器资产名为 `FourJ_PV_Toolbox_Setup_v1.0.10.exe`，不要把 Source code 压缩包当作安装包。
 2. 核对 SHA-256，保存并备份图纸，完全退出 AutoCAD、探索者和 AutoCAD Core Console。
 3. 运行安装器，确认目标为 AutoCAD 2020 R23.1；升级时选择与旧版相同的安装范围，不绕过兼容性或降级检查。
 4. 重新启动 AutoCAD，输入 `JJJJ` 打开首页，输入 `STABOUT` 查看版本。先在图纸副本上试用，再人工复核结果。
