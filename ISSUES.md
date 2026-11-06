@@ -1,14 +1,17 @@
 # 项目问题清单
 
-- [ ] `ISSUE-0072` 将工程数值占位符保护修复交付为 v1.0.12 稳定补丁并完成更新渠道验证。
+- [x] `ISSUE-0072` 将工程数值占位符保护修复交付为 v1.0.12 稳定补丁并完成更新渠道验证。
   - 来源：自主推进软件更新，PR #9 已复现并修复 ISSUE-0071。
   - 验收：六 DLL、Bundle、安装器、标签与稳定清单统一版本；数值/CAD 格式/型号保护、翻译/API/缓存/UI、完整回归、真实 CAD 写入/保存重开/撤销及主模块、隔离安装/升级/回滚/卸载通过；草稿四资产下载回验后公开 latest，新旧更新模块可发现、下载和校验。保留用户设置、原图和历史发行；人工确认编辑保持可用，不自动升级本机正式安装，不冒称真实 API 或完整 CAD GUI 人工验收已完成。
   - 2026-11-06 进展：最终候选、Source/Built 49/56 项、完整回归、数值/格式/型号/公差保护与 API/缓存/UI、真实 CAD 数值写入/重开/撤销及主模块、隔离安装/升级/回滚/卸载通过；1.0.11→1.0.12 隔离升级和反向降级拒绝通过，正式安装/设置不变。候选大小 2,249,071 字节，SHA-256 CEB7A0C8FFB06F1C4C050EBEDFCE4678E67426BA7082EB2CD767B9C1164A76AF；待 GitHub 发行与线上回验，见 docs/安装器验证记录_v1.0.12.md。
+  - 完成日期：2026-11-06。PR #9/#10 均已合并，v1.0.12 于 21:08:21（北京时间）公开为 latest，非草稿/预发布。源码 tag/release.json 固定指向 335f24a0ee7ae7fc9ad2f14ea0d5c792f669d468；四资产全部草稿下载回验一致，1.0.8 已安装、1.0.11 已发行冻结候选和 1.0.12 当前更新模块均通过新旧清单、版本判断及下载大小/SHA-256 校验。Published 体检 61 项及 112 项原图/历史交付哈希保护通过，本机正式安装仍为 1.0.8。
+  - 发行：https://github.com/deepfry666/fourj-pv-toolbox/releases/tag/v1.0.12；证据 work/v112-github-publish-resume.log、work/release-download-check-10166e723fef42fea01123dbaf90523d、work/v112-live-clients、work/v112-installed-v108.log、work/v112-released-v111.log、work/v112-current-v112.log、work/v112-latest-release.json、work/v112-published-readiness.log、work/v112-originals-protection.log。前两次遇到 API/TLS 超时；最终在原草稿上先核对四资产身份并完成下载回验才公开，失败尝试未计为通过。
 
 - [x] `ISSUE-0071` 自动翻译的裸数字、范围起点、负数和科学计数未完整进入占位符保护，数值被改写后仍能通过校验。
   - 来源：2026-11-06 离线复现：原文“每组24块，间隙3~5mm，标高-0.30，调整1.25e-3”只保护了 5mm，模拟返回把 24→42、3→8、-0.30→-3.0、1.25e-3→99 后 TryRestore 仍成功，见 work/number-protection-before.log。
   - 验收：自动请求保护数量、带符号数值、范围/尺寸/比例、科学计数及常见复合单位，保留 CAD 格式与型号；删除/改写数值占位符应拒绝，正确模板能原样还原；翻译核心/API/UI、CAD 替换/保存重开/撤销及完整回归通过。确认窗仍允许用户主动编辑译文，不用此修复禁止人工校正。
   - 完成日期：2026-11-06，开发源码修复，尚未发行。work/number-protection-before.log 与 work/numeric-protection-before-tests.log 先复现；修复后 16 组数值表达式、普通英文单位边界、CAD 公差码/格式/型号还原及坏占位符拒绝通过。真实 AutoCAD 检查数值和复合单位写入/保存重开，替换与一次撤销通过；独立翻译核心/API/缓存/四档 DPI/交互、六 DLL 构建和完整回归通过。证据 work/numeric-protection-module-tests.log、work/numeric-protection-cad.log（work/drawing-translation-568cf66ba49c4995a176c1bac0dfeb19）、work/numeric-protection-main-build.log、work/numeric-protection-regression.log；无真实翻译 API 调用和用户配置改写。
+  - 发行补充：2026-11-06 已随 v1.0.12 稳定补丁公开，四资产及新旧更新模块回验通过，见 ISSUE-0072。
 
 - [x] `ISSUE-0070` 将多行块属性完整内容及原文变化保护修复发布为 v1.0.11 稳定补丁。
   - 来源：自主推进软件更新，PR #7 已复现并修复 ISSUE-0069。
