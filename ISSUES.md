@@ -1,5 +1,10 @@
 # 项目问题清单
 
+- [x] `ISSUE-0063` README 更新介绍后，发布体检仍固定匹配旧的“当前发布版本为”句式，导致正式六 DLL 已构建但完整回归失败。
+  - 来源：2026-11-06 执行最新 main 基线的完整回归和 Built 体检确认；README 明确显示当前正式版 v1.0.8 和程序集 1.0.8.0，脚本误报版本缺失。
+  - 验收：发布体检读取当前版本说明，容许 Markdown 强调和新旧说明句式，仍拒绝错误版本；Built 体检、ReleaseWorkflowTests 和完整回归通过。
+  - 完成日期：2026-11-06。新旧句式通过、错误版本及版本前缀均被拒绝；Built 体检 56 项无阻塞，ReleaseWorkflowTests 和完整 scripts/test.ps1 通过。证据：work/translation-layout-readme-gate.log、work/translation-layout-readiness.log、work/translation-layout-regression.log。
+
 - [x] `ISSUE-0062` 为公开仓库补齐面向首次使用者的功能介绍、使用导航和正式版边界说明。
   - 来源：用户要求完善自有项目介绍，按项目提交 PR 供审核。
   - 登记日期：2026-11-05。

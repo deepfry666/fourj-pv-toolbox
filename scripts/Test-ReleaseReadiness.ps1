@@ -182,8 +182,11 @@ Assert-Text "src\StructuralToolbox.Rail\Commands\RailDrawingService.cs" `
     "ToolEntityVersion = `"$version3`"" "rail metadata uses v$version3"
 Assert-Text "scripts\test.ps1" "RELEASE_VERSION=$version3" `
     "regression suite reports v$version3"
-Assert-Text "README.md" "当前发布版本为``v$version3``" `
-    "README reports v$version3"
+$readme = Get-Content -LiteralPath (Resolve-ProjectPath 'README.md') -Raw -Encoding UTF8
+$plainReadme = $readme.Replace('`', '').Replace('*', '')
+$readmeVersionPattern = '(?m)^\s*>?\s*当前(?:正式版\s*[:：]\s*|发布版本为\s*)v' +
+    [regex]::Escape($version3) + '(?![\d.])'
+Assert-Condition ($plainReadme -match $readmeVersionPattern) "README reports v$version3"
 Assert-Text "README.md" "``$version4``" `
     "README reports assembly version $version4"
 
