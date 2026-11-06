@@ -18,8 +18,41 @@ public sealed class DrawingTranslationCadTests
 {
     private static List<TranslationEdit> _rollback;
 
+    [CommandMethod("STPVTRANSLATIONUNDOSEED", CommandFlags.Modal)]
+    public void SeedUndo() { RunUndoStage(DrawingTranslationLayoutCadTests.UndoSeed, "SEED"); }
+
+    [CommandMethod("STPVTRANSLATIONUNDOAPPLY", CommandFlags.Modal)]
+    public void ApplyUndo() { RunUndoStage(DrawingTranslationLayoutCadTests.UndoApply, "APPLY"); }
+
+    [CommandMethod("STPVTRANSLATIONUNDOCHECK", CommandFlags.Modal)]
+    public void CheckUndo() { RunUndoStage(DrawingTranslationLayoutCadTests.UndoCheck, "CHECK"); }
+
+    private static void RunUndoStage(Action<Database> stage, string name)
+    {
+        Document document = AcApplication.DocumentManager.MdiActiveDocument;
+        try
+        {
+            stage(document.Database);
+            document.Editor.WriteMessage("\nSTPV_TRANSLATION_UNDO_" + name + "_PASS");
+        }
+        catch (System.Exception error)
+        {
+            document.Editor.WriteMessage("\nSTPV_TRANSLATION_UNDO_" + name + "_FAIL " + error);
+        }
+    }
+
     [CommandMethod("STPVTRANSLATIONREPLACECHECK", CommandFlags.Modal)]
     public void CheckReplacement()
+    {
+        try { ExecuteReplacementCheck(); }
+        catch (System.Exception error)
+        {
+            AcApplication.DocumentManager.MdiActiveDocument.Editor.WriteMessage(
+                "\nSTPV_TRANSLATION_REPLACE_FAIL " + error.ToString());
+        }
+    }
+
+    private static void ExecuteReplacementCheck()
     {
         Document document = AcApplication.DocumentManager.MdiActiveDocument;
         Database database = document.Database;
@@ -73,7 +106,55 @@ public sealed class DrawingTranslationCadTests
                 "table cells were not replaced in place");
             transaction.Commit();
         }
+        CheckDenseLayout(database);
+        DrawingTranslationLayoutCadTests.Run(database);
         document.Editor.WriteMessage("\nSTPV_TRANSLATION_REPLACE_PASS");
+    }
+
+    private static void CheckDenseLayout(Database database)
+    {
+        ObjectId sourceId;
+        ObjectId neighbourId;
+        using (Transaction transaction = database.TransactionManager.StartTransaction())
+        {
+            BlockTableRecord model = (BlockTableRecord)transaction.GetObject(
+                SymbolUtilityServices.GetBlockModelSpaceId(database), OpenMode.ForWrite);
+            MText source = new MText();
+            source.SetDatabaseDefaults(database);
+            source.Location = new Point3d(10000, 1000, 0);
+            source.TextHeight = 10;
+            source.Width = 80;
+            source.Contents = "设备基础";
+            sourceId = model.AppendEntity(source);
+            transaction.AddNewlyCreatedDBObject(source, true);
+            MText neighbour = new MText();
+            neighbour.SetDatabaseDefaults(database);
+            neighbour.Location = new Point3d(10000, 980, 0);
+            neighbour.TextHeight = 10;
+            neighbour.Width = 80;
+            neighbour.Contents = "下一行必须保留";
+            neighbourId = model.AppendEntity(neighbour);
+            transaction.AddNewlyCreatedDBObject(neighbour, true);
+            transaction.Commit();
+        }
+        int skipped;
+        IList<TranslationTarget> targets = TranslationCommands.ReadTargets(
+            database, new[] { sourceId }, out skipped);
+        int stale;
+        TranslationCommands.ReplaceEdits(database,
+            new[] { new TranslationEdit(targets[0],
+                "Equipment foundation with additional construction requirements " +
+                "and installation instructions that cannot fit between dense rows") },
+            out stale);
+        using (Transaction transaction = database.TransactionManager.StartOpenCloseTransaction())
+        {
+            MText source = (MText)transaction.GetObject(sourceId, OpenMode.ForRead);
+            MText neighbour = (MText)transaction.GetObject(neighbourId, OpenMode.ForRead);
+            Require(source.GeometricExtents.MinPoint.Y >
+                neighbour.GeometricExtents.MaxPoint.Y,
+                "long English translation overlaps the following unselected row");
+            transaction.Commit();
+        }
     }
 
     [CommandMethod("STPVTRANSLATIONREPLACEREOPEN", CommandFlags.Modal)]
@@ -106,6 +187,7 @@ public sealed class DrawingTranslationCadTests
             transaction.Commit();
         }
         Require(found == 3, "replaced entities did not survive reopen");
+        DrawingTranslationLayoutCadTests.CheckReopen(database);
         AcApplication.DocumentManager.MdiActiveDocument.Editor.WriteMessage(
             "\nSTPV_TRANSLATION_REPLACE_REOPEN_PASS");
     }

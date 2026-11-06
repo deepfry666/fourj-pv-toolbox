@@ -441,17 +441,17 @@ namespace StructuralToolbox.DrawingTranslation.Commands
                             "直接替换结果与原文相同，未修改图纸。");
                         return;
                     }
-                    int staleDirect;
+                    int staleDirect, layoutSkippedDirect;
                     int replacedDirect = ReplaceEdits(document.Database,
-                        edits, out staleDirect);
+                        edits, out staleDirect, out layoutSkippedDirect);
                     editor.Regen();
                     editor.WriteMessage(
-                        "\n已直接替换 {0} 项，因原文变化跳过 {1} 项。（{2}）",
-                        replacedDirect, staleDirect,
+                        "\n已直接替换 {0} 项，因原文变化跳过 {1} 项，排版空间不足保留原文 {2} 项。（{3}）",
+                        replacedDirect, staleDirect, layoutSkippedDirect,
                         TranslationDiagnostics.ModuleStamp());
                     TranslationDiagnostics.Log(String.Format(
-                        "直接替换完成：写入 {0} 项，跳过 {1} 项。",
-                        replacedDirect, staleDirect));
+                        "直接替换完成：写入 {0} 项，原文变化 {1} 项，排版空间不足 {2} 项。",
+                        replacedDirect, staleDirect, layoutSkippedDirect));
                     return;
                 }
                 using (TranslationReviewDialog dialog =
@@ -463,17 +463,17 @@ namespace StructuralToolbox.DrawingTranslation.Commands
                         TranslationDiagnostics.Log("用户在确认窗取消写入，图纸未修改。");
                         return;
                     }
-                    int stale;
+                    int stale, layoutSkipped;
                     int written = ReplaceEdits(document.Database,
-                        dialog.Edits, out stale);
+                        dialog.Edits, out stale, out layoutSkipped);
                     editor.Regen();
                     editor.WriteMessage(
-                        "\n确认后已替换 {0} 项，因原文变化跳过 {1} 项。（{2}）",
-                        written, stale,
+                        "\n确认后已替换 {0} 项，因原文变化跳过 {1} 项，排版空间不足保留原文 {2} 项。（{3}）",
+                        written, stale, layoutSkipped,
                         TranslationDiagnostics.ModuleStamp());
                     TranslationDiagnostics.Log(String.Format(
-                        "确认后替换完成：写入 {0} 项，跳过 {1} 项。",
-                        written, stale));
+                        "确认后替换完成：写入 {0} 项，原文变化 {1} 项，排版空间不足 {2} 项。",
+                        written, stale, layoutSkipped));
                 }
             }
             catch (System.Exception exception)
@@ -697,7 +697,15 @@ namespace StructuralToolbox.DrawingTranslation.Commands
         internal static int ReplaceEdits(Database database,
             IList<TranslationEdit> edits, out int stale)
         {
+            int layoutSkipped;
+            return ReplaceEdits(database, edits, out stale, out layoutSkipped);
+        }
+
+        internal static int ReplaceEdits(Database database,
+            IList<TranslationEdit> edits, out int stale, out int layoutSkipped)
+        {
             stale = 0;
+            layoutSkipped = 0;
             int replaced = 0;
             ObjectId modelSpace = SymbolUtilityServices.
                 GetBlockModelSpaceId(database);
@@ -706,6 +714,8 @@ namespace StructuralToolbox.DrawingTranslation.Commands
             {
                 BlockTableRecord model = (BlockTableRecord)transaction.GetObject(
                     modelSpace, OpenMode.ForWrite);
+                TranslationLayoutSession layout = new TranslationLayoutSession(
+                    database, transaction, model);
                 foreach (TranslationEdit edit in edits)
                 {
                     TranslationTarget target = edit.Target;
@@ -726,34 +736,41 @@ namespace StructuralToolbox.DrawingTranslation.Commands
                         stale++;
                         continue;
                     }
-                    entity.UpgradeOpen();
                     AttributeReference attribute = entity as AttributeReference;
                     DBText dbText = entity as DBText;
                     MText mText = entity as MText;
+                    bool fitted;
                     if (attribute != null)
-                        SetAttributeTranslation(attribute, target.Item.RawContent,
-                            edit.Value);
+                        fitted = layout.TrySetAttribute(attribute, edit.Value);
                     else if (dbText != null)
                     {
-                        MText replacement = CreateWrappedSingleLineText(database,
-                            dbText, edit.Value);
-                        model.AppendEntity(replacement);
-                        transaction.AddNewlyCreatedDBObject(replacement, true);
-                        dbText.Erase();
+                        MText replacement;
+                        fitted = layout.TryCreateWrapped(dbText, edit.Value,
+                            out replacement);
+                        if (fitted)
+                        {
+                            model.AppendEntity(replacement);
+                            transaction.AddNewlyCreatedDBObject(replacement, true);
+                            dbText.UpgradeOpen();
+                            dbText.Erase();
+                            layout.Reserve(target.ObjectId, replacement);
+                        }
                     }
                     else if (mText != null)
-                    {
-                        double width = ResolveMTextWidth(mText);
-                        mText.Width = width;
-                        mText.Contents = ToMTextContents(edit.Value);
-                    }
+                        fitted = layout.TrySetMText(mText, edit.Value);
                     else
+                        fitted = layout.TrySetCell((Table)entity, target.Row,
+                            target.Column, edit.Value);
+                    if (!fitted)
                     {
-                        Table table = (Table)entity;
-                        table.Cells[target.Row, target.Column].Contents[0].TextString =
-                            edit.Value;
-                        table.GenerateLayout();
+                        layoutSkipped++;
+                        TranslationDiagnostics.Log("排版空间不足，保留原文：" +
+                            target.Item.Handle + (target.IsTableCell
+                                ? " 单元格 " + target.Row + "," + target.Column : ""));
+                        continue;
                     }
+                    if (attribute != null || mText != null || target.IsTableCell)
+                        layout.Reserve(target.ObjectId, entity);
                     replaced++;
                 }
                 transaction.Commit();
@@ -820,144 +837,5 @@ namespace StructuralToolbox.DrawingTranslation.Commands
                 cell.Contents[0].FieldId == ObjectId.Null;
         }
 
-        private static MText CreateWrappedSingleLineText(Database database,
-            DBText source, string translated)
-        {
-            MText result = new MText();
-            result.SetDatabaseDefaults(database);
-            result.SetPropertiesFrom(source);
-            ConfigureWrappedSingleLineText(result, source, translated);
-            return result;
-        }
-
-        private static void ConfigureWrappedSingleLineText(MText result,
-            DBText source, string translated)
-        {
-            Vector3d right = Vector3d.XAxis.RotateBy(source.Rotation,
-                source.Normal).GetNormal();
-            Vector3d up = source.Normal.CrossProduct(right).GetNormal();
-            double estimated = Math.Max(source.Height * 4.0,
-                source.Height * Math.Max(1, source.TextString.Length) *
-                Math.Max(0.2, source.WidthFactor) * 0.75);
-            double left;
-            double top;
-            double bottom;
-            double width;
-            double plane;
-            GetProjectedFrame(source, right, up, source.Normal,
-                source.Position, estimated, source.Height,
-                out left, out top, out bottom, out width, out plane);
-            result.Attachment = AttachmentPoint.TopLeft;
-            result.Normal = source.Normal;
-            result.Direction = right;
-            result.TextStyleId = source.TextStyleId;
-            result.TextHeight = source.Height;
-            result.Width = width;
-            result.Contents = ToMTextContents(translated);
-            result.Location = PointOnFrame(right, left, up, top,
-                source.Normal, plane);
-        }
-
-        private static void SetAttributeTranslation(AttributeReference attribute,
-            string original, string translated)
-        {
-            attribute.TextString = translated;
-            if (attribute.IsMTextAttribute)
-            {
-                attribute.UpdateMTextAttribute();
-                return;
-            }
-            double originalLength = Math.Max(1, (original ?? String.Empty).Length);
-            double translatedLength = Math.Max(1,
-                (translated ?? String.Empty).Length);
-            double scale = Math.Min(1.0, originalLength / translatedLength);
-            attribute.WidthFactor = Math.Max(0.5,
-                Math.Min(attribute.WidthFactor, attribute.WidthFactor * scale));
-        }
-
-        private static double ResolveMTextWidth(MText text)
-        {
-            if (text.Width > text.TextHeight)
-                return text.Width;
-            double left;
-            double top;
-            double bottom;
-            double width;
-            double plane;
-            Vector3d right = text.Direction.GetNormal();
-            Vector3d up = text.Normal.CrossProduct(right).GetNormal();
-            GetProjectedFrame(text, right, up, text.Normal, text.Location,
-                Math.Max(text.TextHeight * 4.0, text.ActualWidth),
-                text.TextHeight, out left, out top, out bottom, out width,
-                out plane);
-            return width;
-        }
-
-        private static void GetProjectedFrame(Entity entity, Vector3d right,
-            Vector3d up, Vector3d normal, Point3d fallback,
-            double fallbackWidth, double fallbackHeight, out double left,
-            out double top, out double bottom, out double width,
-            out double plane)
-        {
-            left = fallback.GetAsVector().DotProduct(right);
-            double fallbackUp = fallback.GetAsVector().DotProduct(up);
-            top = fallbackUp + Math.Max(fallbackHeight, 1.0);
-            bottom = fallbackUp;
-            width = Math.Max(fallbackWidth, Math.Max(fallbackHeight, 1.0) * 4.0);
-            plane = fallback.GetAsVector().DotProduct(normal);
-            try
-            {
-                Extents3d extents = entity.GeometricExtents;
-                double minRight = Double.PositiveInfinity;
-                double maxRight = Double.NegativeInfinity;
-                double minUp = Double.PositiveInfinity;
-                double maxUp = Double.NegativeInfinity;
-                foreach (Point3d corner in ExtentCorners(extents))
-                {
-                    Vector3d vector = corner.GetAsVector();
-                    double alongRight = vector.DotProduct(right);
-                    double alongUp = vector.DotProduct(up);
-                    minRight = Math.Min(minRight, alongRight);
-                    maxRight = Math.Max(maxRight, alongRight);
-                    minUp = Math.Min(minUp, alongUp);
-                    maxUp = Math.Max(maxUp, alongUp);
-                }
-                if (!Double.IsInfinity(minRight) && maxRight > minRight)
-                {
-                    left = minRight;
-                    width = Math.Max(maxRight - minRight,
-                        Math.Max(fallbackHeight, 1.0) * 4.0);
-                    top = maxUp;
-                    bottom = minUp;
-                }
-            }
-            catch (Autodesk.AutoCAD.Runtime.Exception) { }
-        }
-
-        private static IEnumerable<Point3d> ExtentCorners(Extents3d extents)
-        {
-            Point3d min = extents.MinPoint;
-            Point3d max = extents.MaxPoint;
-            yield return new Point3d(min.X, min.Y, min.Z);
-            yield return new Point3d(min.X, min.Y, max.Z);
-            yield return new Point3d(min.X, max.Y, min.Z);
-            yield return new Point3d(min.X, max.Y, max.Z);
-            yield return new Point3d(max.X, min.Y, min.Z);
-            yield return new Point3d(max.X, min.Y, max.Z);
-            yield return new Point3d(max.X, max.Y, min.Z);
-            yield return new Point3d(max.X, max.Y, max.Z);
-        }
-
-        private static Point3d PointOnFrame(Vector3d right, double x,
-            Vector3d up, double y, Vector3d normal, double z)
-        {
-            return Point3d.Origin + right * x + up * y + normal * z;
-        }
-
-        private static string ToMTextContents(string value)
-        {
-            return (value ?? String.Empty).Replace("\r\n", "\n").
-                Replace("\r", "\n").Replace("\n", "\\P");
-        }
     }
 }

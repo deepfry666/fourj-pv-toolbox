@@ -1,5 +1,10 @@
 # 项目问题清单
 
+- [x] `ISSUE-0063` README 更新介绍后，发布体检仍固定匹配旧的“当前发布版本为”句式，导致正式六 DLL 已构建但完整回归失败。
+  - 来源：2026-11-06 执行最新 main 基线的完整回归和 Built 体检确认；README 明确显示当前正式版 v1.0.8 和程序集 1.0.8.0，脚本误报版本缺失。
+  - 验收：发布体检读取当前版本说明，容许 Markdown 强调和新旧说明句式，仍拒绝错误版本；Built 体检、ReleaseWorkflowTests 和完整回归通过。
+  - 完成日期：2026-11-06。新旧句式通过、错误版本及版本前缀均被拒绝；Built 体检 56 项无阻塞，ReleaseWorkflowTests 和完整 scripts/test.ps1 通过。证据：work/translation-layout-readme-gate.log、work/translation-layout-readiness.log、work/translation-layout-regression.log。
+
 - [x] `ISSUE-0062` 为公开仓库补齐面向首次使用者的功能介绍、使用导航和正式版边界说明。
   - 来源：用户要求完善自有项目介绍，按项目提交 PR 供审核。
   - 登记日期：2026-11-05。
@@ -18,6 +23,8 @@
   - 范围：更新仓库引用、发行脚本及更新源；验证旧地址到新仓库的清单和资产兼容；整理旧库与开发入口。
   - 验收：新仓库公开可访问，旧客户端可读取有效稳定清单并下载匹配安装包，后续发行只使用新仓库。
   - 完成日期：2026-11-05。已改名，旧、新清单匿名请求均为 200 且哈希相同；旧清单安装包下载、大小与 SHA-256 校验通过；当前配置和发布脚本使用新仓库。详情见 REPOSITORY_MIGRATION.md。
+  - 2026-11-06 复核：本机 origin 已从已删除的旧私有库切换到公开主库，工作分支以最新 main（58a4770）为基线；没有合入旧私有历史。当前源码更新模块只读取新仓库，发行准备脚本默认相同仓库；已安装 1.0.8 仍用旧 Release 名称，匿名重定向有效。两份真实 .NET Framework 更新模块均识别 latest v1.0.8、正确判断版本并下载校验 2,245,217 字节安装包，SHA-256 为 4e28c12289ed004f74067757508b69ed97b12a945a877a960e4250b73726dc20，四个 Release 资产记录一致。未执行安装器、未修改线上 Release。
+  - 复验入口与证据：scripts/verify-github-update-channel.ps1；work/translation-layout-update-channel-final.log、work/github-update-channel-ee54f4a32a464707b9c07cff6e3bedb6（current/installed/result.json）。旧地址保留在历史清单中，以重定向维持兼容；本轮不重写已发布资产。
 
 - [ ] `ISSUE-0061` 所有者手动删除已归档的旧私有源码库 `SijiPVToolbox-AutoCAD2020`。
   - 状态：交由用户手动处理；GitHub CLI 缺少 delete_repo 权限，用户已明确表示无权限操作由本人完成。
@@ -143,6 +150,10 @@
   - 验证：AutoCAD 2020 Core Console 验证长 DBText 译文位于原文下方、宽度受限且实际高度超过单行，并通过保存重开；表格列译文按列累计实际高度。
 
 - [x] `ISSUE-0042` 中文图纸文字翻译成英文后长度显著增加，插件只替换字符串，没有按原文字区域自适应换行，造成跨区域覆盖和大面积重叠。
+  - 2026-11-06 重新打开：用户再次反馈长英文挤在一起。以公开主仓库 main（58a4770）为基线核查，原修复只约束宽度，没有检测换行后的高度与相邻文字；旋转文字使用世界轴外包框二次投影，可能高估可用宽度。原下列完成记录保留作为历史证据。
+  - 本轮验收：独立验证排版规则，再用真实 AutoCAD 验证密集文字、旋转、长单词、MText、块属性和表格；能放下的译文自动换行与有限缩小，无法安全放下时保留原文并明确报告；保存重开、原图保护、完整回归及主构建通过后重新关闭。
+  - 本轮完成日期：2026-11-06。真实 CAD 先复现未选中下一行被覆盖；修复后 9 项独立排版场景、离线 API/缓存和四档 DPI/UI 交互、AutoCAD 2020 七组排版场景（含七种旋转/文字平面、单/多行属性、同批占位、长单词、表外文字和直线边界）、保存重开和一次 U 撤销全部通过；完整回归及六 DLL 构建通过。空间不足单独统计，保留原文；字高最低 75%，不按字符数压扁属性。请求使用简洁工程用语且升级缓存键版本。
+  - 本轮证据：work/translation-layout-module-tests.log、work/translation-layout-cad-final.log、work/drawing-translation-26796b4fa5e24e68b01f3c0de9e870c2、work/translation-layout-main-build.log、work/translation-layout-regression.log、work/translation-layout-original-protection.log。未调用真实翻译 API、未安装或发布新版本；图形界面截图因桌面捕获不可用未取得，几何和撤销以真实 Core Console 验证为准。弧线/复杂曲线及非共面模型不保证自动避让。
   - 状态：已完成；普通单行文字替换为固定宽度 MText，原 MText 沿用或补齐原实际宽度，块属性保持原类型并限制宽度系数。
   - 来源：用户于 2026-09-24 提供翻译后图纸截图并反馈“都太长了没有自适应换行”。
   - 验收要求：多行文字沿用原宽度并产生可控自动换行；单行文字转换为等效多行文字或采用不破坏可读性的受限排版；旋转、对齐、文字高度和图层等关键属性保持一致；替换结果可一次撤销。

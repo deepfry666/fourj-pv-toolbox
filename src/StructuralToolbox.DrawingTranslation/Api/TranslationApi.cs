@@ -301,8 +301,11 @@ namespace StructuralToolbox.DrawingTranslation.Api
 
         private const int MaximumTextsPerRequest = 40;
         private const int MaximumSplitAttempts = 32;
+        internal const string PromptRevision = "engineering-labels-v2";
         private const string SystemPrompt =
             "Detect each source language and translate every text to the requested target language. " +
+            "Use concise engineering drawing labels and notes, without explanations or added context. " +
+            "Keep all engineering requirements, qualifiers and warnings; do not omit meaning to shorten text. " +
             "Return only a JSON array of translated strings in the same order and count. " +
             "Preserve every __STPV_TOKEN_0000__-style marker exactly, in its original order, " +
             "without translating or duplicating it. Preserve numbers and engineering meaning.";

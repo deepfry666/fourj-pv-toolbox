@@ -18,6 +18,7 @@ internal static class DrawingTranslationApiTests
         {
             CheckSettings();
             CheckCacheAndProgress().GetAwaiter().GetResult();
+            CheckLegacyVerboseCache();
             CheckEndpointResolution();
             CheckProxySettings();
             CheckTranslation().GetAwaiter().GetResult();
@@ -176,6 +177,38 @@ internal static class DrawingTranslationApiTests
         }
     }
 
+    private static void CheckLegacyVerboseCache()
+    {
+        string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
+            "translation-layout-legacy-cache-" + Guid.NewGuid().ToString("N") + ".json");
+        TranslationApiSettings settings = TranslationApiSettings.Default();
+        settings.Model = "test-model";
+        settings.EnableCache = true;
+        string legacyInput = String.Join("\n", new[] {
+            settings.Endpoint, settings.Model, settings.TargetLanguage,
+            settings.Glossary, "屋顶" });
+        string key;
+        using (System.Security.Cryptography.SHA256 sha =
+            System.Security.Cryptography.SHA256.Create())
+            key = BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(
+                legacyInput))).Replace("-", "").ToLowerInvariant();
+        try
+        {
+            File.WriteAllText(path, new JavaScriptSerializer().Serialize(
+                new Dictionary<string, object> { { key, new {
+                    CreatedUtcTicks = DateTime.UtcNow.Ticks,
+                    Translation = "An unnecessarily lengthy explanation of the roof" } } }));
+            TranslationCache cache = new TranslationCache(path);
+            string value;
+            Require(!cache.TryGet(settings, "屋顶", out value),
+                "old verbose translations must not bypass the concise prompt");
+            cache.Put(settings, "屋顶", "Roof");
+            Require(new TranslationCache(path).TryGet(settings, "屋顶", out value) && value == "Roof",
+                "new concise translations must still persist in the cache");
+        }
+        finally { if (File.Exists(path)) File.Delete(path); }
+    }
+
     private static async Task CheckTransportFallback()
     {
         TranslationApiSettings settings = TranslationApiSettings.Default();
@@ -298,6 +331,9 @@ internal static class DrawingTranslationApiTests
                 handler.Body.Contains("test-model") &&
                 handler.Body.Contains(marker),
                 "API request was malformed");
+            Require(handler.Body.Contains("concise engineering drawing labels") &&
+                handler.Body.Contains("do not omit meaning"),
+                "request must ask for concise labels without losing engineering requirements");
         }
         int formatIndex = 0;
         foreach (string content in new [] {
