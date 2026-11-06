@@ -22,7 +22,7 @@ $powerShellPath = if ($PSVersionTable.PSEdition -eq "Core") { (Get-Command pwsh 
 $readinessPath = Join-Path $projectRoot `
     "scripts\Test-ReleaseReadiness.ps1"
 $readinessOutput = @(& $powerShellPath -NoProfile -ExecutionPolicy Bypass `
-    -File $readinessPath -Version 1.0.11 -Phase Built 2>&1)
+    -File $readinessPath -Version 1.0.12 -Phase Built 2>&1)
 Assert-Condition ($LASTEXITCODE -eq 0) `
     "current six-module build passes release readiness"
 $readinessText = $readinessOutput | Out-String
