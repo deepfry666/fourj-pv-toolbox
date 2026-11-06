@@ -35,9 +35,11 @@
     <Compile Include="Core\DrawingTextModels.cs" />
     <Compile Include="Core\TextProtection.cs" />
     <Compile Include="Core\TranslationBatch.cs" />
+    <Compile Include="Core\TranslationLayout.cs" />
     <Compile Include="Api\TranslationApi.cs" />
     <Compile Include="Api\TranslationCache.cs" />
     <Compile Include="Commands\TranslationTarget.cs" />
+    <Compile Include="Commands\TranslationLayoutSession.cs" />
     <Compile Include="Commands\TranslationCommands.cs" />
     <Compile Include="UI\TranslationReviewDialog.cs" />
     <Compile Include="UI\TranslationApiSettingsDialog.cs" />

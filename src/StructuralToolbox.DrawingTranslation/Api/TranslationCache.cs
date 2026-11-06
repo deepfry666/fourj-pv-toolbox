@@ -97,6 +97,7 @@ namespace StructuralToolbox.DrawingTranslation.Api
         private string Key(TranslationApiSettings settings, string source)
         {
             string value = String.Join("\n", new [] {
+                OpenAiCompatibleTranslator.PromptRevision,
                 settings.Endpoint ?? String.Empty,
                 settings.Model ?? String.Empty,
                 settings.TargetLanguage ?? String.Empty,

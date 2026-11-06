@@ -4,6 +4,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $projectRoot = Split-Path -Parent $PSScriptRoot
+& (Join-Path $PSScriptRoot 'test-drawing-translation-layout.ps1')
 $compiler = "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
 $testDirectory = Join-Path $projectRoot "work\tests"
 $output = Join-Path $testDirectory "DrawingTranslationCoreTests.exe"

@@ -17,10 +17,12 @@ $runRoot = Join-Path $projectRoot ("work\" + $runName)
 New-Item -ItemType Directory -Path $runRoot -Force | Out-Null
 $fixture = Join-Path $runRoot "fixture.dwg"
 $replaceFixture = Join-Path $runRoot "replace-fixture.dwg"
+$undoFixture = Join-Path $runRoot "undo-fixture.dwg"
 $harness = Join-Path $runRoot "DrawingTranslationCadHarness.dll"
 $contractsPath = Join-Path $runRoot "StructuralToolbox.Contracts.dll"
 Copy-Item -LiteralPath $template -Destination $fixture
 Copy-Item -LiteralPath $template -Destination $replaceFixture
+Copy-Item -LiteralPath $template -Destination $undoFixture
 
 & (Join-Path $PSScriptRoot "build-contracts.ps1") `
     -OutputDirectory $runRoot | Out-Null
@@ -33,6 +35,7 @@ $sources = @(Get-ChildItem -LiteralPath $sourceRoot -Filter "*.cs" -Recurse |
     Where-Object { $_.Name -ne "AssemblyInfo.cs" } |
     Sort-Object FullName | ForEach-Object { $_.FullName })
 $sources += Join-Path $projectRoot "tests\DrawingTranslationCadTests.cs"
+$sources += Join-Path $projectRoot "tests\DrawingTranslationLayoutCadTests.cs"
 $references = @(
     "/reference:$(Join-Path $AutoCADDir 'acmgd.dll')",
     "/reference:$(Join-Path $AutoCADDir 'acdbmgd.dll')",
@@ -67,7 +70,9 @@ try {
         [pscustomobject]@{ Name="replace"; Command="STPVTRANSLATIONREPLACECHECK";
             Token="STPV_TRANSLATION_REPLACE_PASS"; Save=$true; Fixture=$replaceFixture },
         [pscustomobject]@{ Name="replace-reopen"; Command="STPVTRANSLATIONREPLACEREOPEN";
-            Token="STPV_TRANSLATION_REPLACE_REOPEN_PASS"; Save=$false; Fixture=$replaceFixture }
+            Token="STPV_TRANSLATION_REPLACE_REOPEN_PASS"; Save=$false; Fixture=$replaceFixture },
+        [pscustomobject]@{ Name="undo"; Command="STPVTRANSLATIONUNDOSEED";
+            Token="STPV_TRANSLATION_UNDO_CHECK_PASS"; Save=$true; Fixture=$undoFixture }
     )) {
         $script = Join-Path $runRoot ($step.Name + ".scr")
         $lines = @(
@@ -77,6 +82,9 @@ try {
             (Convert-ToQPath $harness),
             $step.Command
         )
+        if ($step.Name -eq 'undo') {
+            $lines += @('STPVTRANSLATIONUNDOAPPLY', '_.U', 'STPVTRANSLATIONUNDOCHECK')
+        }
         if ($step.Save) { $lines += '_.QSAVE' }
         $lines += '_.QUIT'
         [IO.File]::WriteAllLines($script, $lines, [Text.Encoding]::ASCII)
@@ -92,6 +100,8 @@ try {
         if ($exitCode -ne 0 -or -not $log.Contains($step.Token)) {
             throw "CAD $($step.Name) verification failed: $logPath"
         }
+        if ($step.Name -eq 'undo' -and (-not $log.Contains('STPV_TRANSLATION_UNDO_APPLY_PASS') -or
+            $log.Contains('_FAIL'))) { throw "UNDO apply/check verification failed: $logPath" }
         Write-Host $step.Token
     }
 } finally {

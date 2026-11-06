@@ -17,6 +17,7 @@ $uiLayoutTestOutput = Join-Path $testDirectory "ToolboxUiLayoutTests.exe"
 $quantityTestOutput = Join-Path $testDirectory "QuantityStatisticsTests.exe"
 $updateCoreTestOutput = Join-Path $testDirectory "UpdateCoreTests.exe"
 New-Item -ItemType Directory -Path $testDirectory -Force | Out-Null
+& (Join-Path $PSScriptRoot 'test-drawing-translation-layout.ps1')
 
 function Get-SourceCodeFingerprint {
     $sourceRoots = @(
