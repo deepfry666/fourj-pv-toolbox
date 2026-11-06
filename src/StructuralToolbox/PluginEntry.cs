@@ -35,7 +35,7 @@ namespace StructuralToolbox
             if (document != null)
             {
                 document.Editor.WriteMessage(
-                    "\n四季光伏工具箱 1.0.12 已加载。" +
+                    "\n四季光伏工具箱 1.0.13 已加载。" +
                     "输入 JJJJ 打开首页。 ");
             }
         }
