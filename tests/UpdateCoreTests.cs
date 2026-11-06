@@ -258,12 +258,13 @@ internal static class UpdateCoreTests
 
     private static void TestOnlineSizeValidation()
     {
+        const long maximum = 512L * 1024L * 1024L; // Published wire-contract limit, independent of implementation.
         Uri source = new Uri("https://primary.example.test/stable.json");
         string valid = ManifestJson("https://primary.example.test/setup.exe", new string('a', 64), 20);
         string[] invalid = {
             valid.Replace(",\"sizeBytes\":20", ""),
             valid.Replace("\"sizeBytes\":20", "\"sizeBytes\":0"),
-            valid.Replace("\"sizeBytes\":20", "\"sizeBytes\":" + (UpdateService.MaximumPackageSizeBytes + 1))
+            valid.Replace("\"sizeBytes\":20", "\"sizeBytes\":" + (maximum + 1))
         };
         foreach (string json in invalid)
         {
@@ -273,7 +274,7 @@ internal static class UpdateCoreTests
             ExpectUpdateException(delegate { service.FetchManifest(source); },
                 "online manifest must reject missing, zero or oversized package size");
         }
-        foreach (long allowed in new[] { 1L, 20L, UpdateService.MaximumPackageSizeBytes })
+        foreach (long allowed in new[] { 1L, 20L, maximum })
         {
             string boundary = valid.Replace("\"sizeBytes\":20", "\"sizeBytes\":" + allowed);
             UpdateService limit = new UpdateService(delegate(Uri uri, CancellationToken token) {
@@ -300,7 +301,7 @@ internal static class UpdateCoreTests
             string previous = Path.Combine(root, "FourJ_PV_Toolbox_Setup_v1.0.3.exe");
             File.WriteAllBytes(previous, payload);
             string hash = ComputeSha256(previous);
-            foreach (long size in new[] { -1L, 0L, UpdateService.MaximumPackageSizeBytes + 1 })
+            foreach (long size in new[] { -1L, 0L, maximum + 1 })
             {
                 int requests = 0;
                 UpdateService service = new UpdateService(delegate(Uri uri, CancellationToken token) {
