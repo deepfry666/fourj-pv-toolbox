@@ -38,6 +38,7 @@ namespace StructuralToolbox.DrawingTranslation.Api
         {
             _path = path;
             _entries = LoadEntries(path);
+            Trim();
         }
 
         internal static TranslationCache ForCurrentUser()
@@ -53,15 +54,16 @@ namespace StructuralToolbox.DrawingTranslation.Api
             out string translation)
         {
             translation = String.Empty;
+            string key = Key(settings, source);
             CacheEntry entry;
-            if (!_entries.TryGetValue(Key(settings, source), out entry) ||
-                entry == null || String.IsNullOrWhiteSpace(entry.Translation))
+            if (!_entries.TryGetValue(key, out entry))
                 return false;
-            DateTime created = new DateTime(entry.CreatedUtcTicks,
-                DateTimeKind.Utc);
-            if ((DateTime.UtcNow - created).TotalDays > settings.CacheDays)
+            DateTime now = DateTime.UtcNow;
+            if (!IsUsable(entry, now) ||
+                (now - new DateTime(entry.CreatedUtcTicks, DateTimeKind.Utc))
+                    .TotalDays > settings.CacheDays)
             {
-                _entries.Remove(Key(settings, source));
+                _entries.Remove(key);
                 return false;
             }
             translation = entry.Translation;
@@ -159,12 +161,30 @@ namespace StructuralToolbox.DrawingTranslation.Api
                 Dictionary<string, CacheEntry> entries =
                     new JavaScriptSerializer().Deserialize<Dictionary<string,
                         CacheEntry>>(File.ReadAllText(path, Encoding.UTF8));
-                return entries ?? new Dictionary<string, CacheEntry>();
+                if (entries == null)
+                    return new Dictionary<string, CacheEntry>();
+                DateTime now = DateTime.UtcNow;
+                List<string> invalid = new List<string>();
+                foreach (KeyValuePair<string, CacheEntry> item in entries)
+                    if (!IsUsable(item.Value, now))
+                        invalid.Add(item.Key);
+                foreach (string key in invalid)
+                    entries.Remove(key);
+                return entries;
             }
             catch (Exception)
             {
                 return new Dictionary<string, CacheEntry>();
             }
+        }
+
+        private static bool IsUsable(CacheEntry entry, DateTime now)
+        {
+            // Validate before constructing DateTime; cache corruption must be a miss,
+            // never an interruption of the drawing translation workflow.
+            return entry != null && !String.IsNullOrWhiteSpace(entry.Translation) &&
+                entry.CreatedUtcTicks > DateTime.MinValue.Ticks &&
+                entry.CreatedUtcTicks <= now.Ticks;
         }
 
         internal sealed class CacheEntry

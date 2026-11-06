@@ -16,6 +16,7 @@ internal static class DrawingTranslationApiTests
     {
         try
         {
+            CheckCacheRecovery();
             CheckSettings();
             CheckCacheAndProgress().GetAwaiter().GetResult();
             CheckEndpointResolution();
@@ -35,6 +36,80 @@ internal static class DrawingTranslationApiTests
         }
     }
 
+    private static void CheckCacheRecovery()
+    {
+        string directory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
+            "cache-recovery-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        string path = Path.Combine(directory, "cache.json");
+        try
+        {
+            TranslationApiSettings settings = TranslationApiSettings.Default();
+            settings.CacheDays = 14;
+            JavaScriptSerializer serializer = new JavaScriptSerializer();
+            TranslationCache cache = new TranslationCache(path);
+            cache.Put(settings, "roof", "Roof");
+            Dictionary<string, TranslationCache.CacheEntry> seed =
+                serializer.Deserialize<Dictionary<string, TranslationCache.CacheEntry>>(
+                    File.ReadAllText(path));
+            string key = new List<string>(seed.Keys)[0];
+            long[] invalidTicks = { -1, Int64.MaxValue, 0,
+                DateTime.UtcNow.AddDays(1).Ticks, DateTime.UtcNow.AddDays(-15).Ticks };
+            foreach (long ticks in invalidTicks)
+            {
+                seed[key].CreatedUtcTicks = ticks;
+                File.WriteAllText(path, serializer.Serialize(seed));
+                cache = new TranslationCache(path);
+                string value;
+                Require(!cache.TryGet(settings, "roof", out value),
+                    "invalid/expired timestamp must be a cache miss: " + ticks);
+                cache.Put(settings, "roof", "Recovered");
+                Require(new TranslationCache(path).TryGet(settings, "roof", out value)
+                    && value == "Recovered", "cache must recover after invalid timestamp");
+            }
+
+            seed[key].CreatedUtcTicks = DateTime.UtcNow.Ticks;
+            seed[key].Translation = "Roof";
+            seed["null-entry"] = null;
+            seed["blank-entry"] = new TranslationCache.CacheEntry {
+                CreatedUtcTicks = DateTime.UtcNow.Ticks, Translation = " " };
+            for (int index = 0; index < 2100; index++)
+                seed["old-" + index] = new TranslationCache.CacheEntry {
+                    CreatedUtcTicks = DateTime.UtcNow.AddDays(-2).Ticks + index,
+                    Translation = "old" };
+            File.WriteAllText(path, serializer.Serialize(seed));
+            cache = new TranslationCache(path);
+            var entriesField = typeof(TranslationCache).GetField("_entries",
+                System.Reflection.BindingFlags.NonPublic |
+                System.Reflection.BindingFlags.Instance);
+            var entries = (Dictionary<string, TranslationCache.CacheEntry>)
+                entriesField.GetValue(cache);
+            Require(entries.Count == 2000, "loaded cache must enforce capacity");
+            Require(!entries.ContainsKey("null-entry") &&
+                !entries.ContainsKey("blank-entry"), "invalid entries must be discarded");
+            string preserved;
+            Require(cache.TryGet(settings, "roof", out preserved) && preserved == "Roof",
+                "valid recent cached translation must survive recovery");
+            cache.Put(settings, "new", "New");
+            Require(new TranslationCache(path).TryGet(settings, "new", out preserved),
+                "capacity cleanup must not block saving");
+            File.WriteAllText(path, "{truncated");
+            cache = new TranslationCache(path);
+            Require(!cache.TryGet(settings, "roof", out preserved),
+                "malformed JSON must be a cache miss");
+            cache.Put(settings, "roof", "Roof");
+            Require(new TranslationCache(path).TryGet(settings, "roof", out preserved),
+                "malformed JSON must recover on save");
+            Console.WriteLine("PASS cache recovery: timestamps, capacity, null, blank, JSON, persistence");
+        }
+        finally
+        {
+            // The generated directory is a direct child of the test executable directory.
+            foreach (string file in Directory.GetFiles(directory))
+                File.Delete(file);
+            Directory.Delete(directory);
+        }
+    }
     private static void CheckEndpointResolution()
     {
         TranslationApiSettings settings = TranslationApiSettings.Default();
