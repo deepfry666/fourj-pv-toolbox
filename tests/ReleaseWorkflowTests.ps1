@@ -21,6 +21,38 @@ function Read-ProjectFile([string]$RelativePath) {
 $powerShellPath = if ($PSVersionTable.PSEdition -eq "Core") { (Get-Command pwsh -ErrorAction Stop).Source } else { (Get-Command powershell.exe -ErrorAction Stop).Source }
 $readinessPath = Join-Path $projectRoot `
     "scripts\Test-ReleaseReadiness.ps1"
+$parseTokens = $null
+$parseErrors = $null
+$readinessAst = [Management.Automation.Language.Parser]::ParseFile(
+    $readinessPath, [ref]$parseTokens, [ref]$parseErrors)
+Assert-Condition ($parseErrors.Count -eq 0) "readiness script parses"
+$versionFunction = $readinessAst.Find({ param($node)
+    $node -is [Management.Automation.Language.FunctionDefinitionAst] -and
+        $node.Name -eq 'Test-ReadmeReleaseVersion'
+}, $true)
+Assert-Condition ($null -ne $versionFunction) "version validator exists"
+. ([scriptblock]::Create($versionFunction.Extent.Text))
+$valid = @(
+    '> 当前正式版：**v1.0.8**（程序集 `1.0.8.0`）。',
+    '当前正式版: **v1.0.8**',
+    '`FourJTooLs`面向AutoCAD。当前发布版本为`v1.0.8`，程序集版本'
+)
+foreach ($text in $valid) {
+    Assert-Condition (Test-ReadmeReleaseVersion $text '1.0.8') "supported declaration accepted"
+    Assert-Condition (-not (Test-ReadmeReleaseVersion $text '1.0.9')) "wrong expected version rejected"
+}
+$invalid = @(
+    '> 当前正式版：**v1.0.9**（历史 v1.0.8）',
+    '> 当前正式版：**v1.0.80**',
+    '> 当前正式版：**v1.0.8.1**',
+    '> 当前正式版：**v1.0.8-preview**',
+    '历史版本 v1.0.8', '',
+    ($valid[0] + "`n" + '> 当前正式版：**v1.0.9**'),
+    ($valid[0] + "`n" + $valid[2])
+)
+foreach ($text in $invalid) {
+    Assert-Condition (-not (Test-ReadmeReleaseVersion $text '1.0.8')) "invalid or ambiguous declaration rejected"
+}
 $readinessOutput = @(& $powerShellPath -NoProfile -ExecutionPolicy Bypass `
     -File $readinessPath -Version 1.0.8 -Phase Built 2>&1)
 Assert-Condition ($LASTEXITCODE -eq 0) `

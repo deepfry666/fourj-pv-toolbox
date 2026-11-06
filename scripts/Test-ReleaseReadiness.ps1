@@ -66,6 +66,13 @@ function Assert-Text([string]$RelativePath, [string]$Expected,
     Assert-Condition ($text.Contains($Expected)) $Description
 }
 
+function Test-ReadmeReleaseVersion([string]$Text, [string]$Expected) {
+    # Read only explicit current-release declarations, not historical mentions.
+    $pattern = '(?m)^\s*(?:>\s*)?(?:当前正式版[：:]\s*\*\*v(?<version>\d+\.\d+\.\d+)\*\*(?=[（(\s。]|$)|(?:.*?当前发布版本为)`v(?<version>\d+\.\d+\.\d+)`)'
+    $declarations = [regex]::Matches($Text, $pattern)
+    if ($declarations.Count -ne 1) { return $false }
+    return $declarations[0].Groups['version'].Value -ceq $Expected
+}
 function Get-NormalizedVersion([version]$Value, [int]$Parts) {
     if ($Parts -eq 3) {
         return "{0}.{1}.{2}" -f $Value.Major, $Value.Minor,
@@ -182,7 +189,7 @@ Assert-Text "src\StructuralToolbox.Rail\Commands\RailDrawingService.cs" `
     "ToolEntityVersion = `"$version3`"" "rail metadata uses v$version3"
 Assert-Text "scripts\test.ps1" "RELEASE_VERSION=$version3" `
     "regression suite reports v$version3"
-Assert-Text "README.md" "当前发布版本为``v$version3``" `
+Assert-Condition (Test-ReadmeReleaseVersion (Get-Text "README.md") $version3) `
     "README reports v$version3"
 Assert-Text "README.md" "``$version4``" `
     "README reports assembly version $version4"
