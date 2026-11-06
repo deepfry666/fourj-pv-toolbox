@@ -17,6 +17,7 @@ internal static class UpdateCoreTests
         TestManifestValidation();
         TestLocalDownloadAndHashVerification();
         TestManifestFallbackAndCancellation();
+        TestOnlineSizeValidation();
         TestDownloadFallbackAndCancellation();
         if (_failures != 0)
         {
@@ -251,6 +252,98 @@ internal static class UpdateCoreTests
             }, 100, 40);
             Assert(File.Exists(service.DownloadInstaller(manifest, null, Path.Combine(root, "timeout"))),
                 "stalled package uses fallback after deadline");
+        }
+        finally { Directory.Delete(root, true); }
+    }
+
+    private static void TestOnlineSizeValidation()
+    {
+        const long maximum = 512L * 1024L * 1024L; // Published wire-contract limit, independent of implementation.
+        Uri source = new Uri("https://primary.example.test/stable.json");
+        string valid = ManifestJson("https://primary.example.test/setup.exe", new string('a', 64), 20);
+        string[] invalid = {
+            valid.Replace(",\"sizeBytes\":20", ""),
+            valid.Replace("\"sizeBytes\":20", "\"sizeBytes\":0"),
+            valid.Replace("\"sizeBytes\":20", "\"sizeBytes\":" + (maximum + 1))
+        };
+        foreach (string json in invalid)
+        {
+            UpdateService service = new UpdateService(delegate(Uri uri, CancellationToken token) {
+                return new MemoryStream(Encoding.UTF8.GetBytes(json));
+            }, 100, 100);
+            ExpectUpdateException(delegate { service.FetchManifest(source); },
+                "online manifest must reject missing, zero or oversized package size");
+        }
+        foreach (long allowed in new[] { 1L, 20L, maximum })
+        {
+            string boundary = valid.Replace("\"sizeBytes\":20", "\"sizeBytes\":" + allowed);
+            UpdateService limit = new UpdateService(delegate(Uri uri, CancellationToken token) {
+                return new MemoryStream(Encoding.UTF8.GetBytes(boundary));
+            }, 100, 100);
+            Assert(limit.FetchManifest(source).SizeBytes == allowed,
+                "positive size and inclusive 1-byte/512-MiB boundaries remain valid");
+        }
+        int checks = 0;
+        UpdateService fallback = new UpdateService(delegate(Uri uri, CancellationToken token) {
+            checks++;
+            return new MemoryStream(Encoding.UTF8.GetBytes(checks == 1 ? invalid[0] : valid));
+        }, 100, 100);
+        Assert(fallback.FetchManifest(new[] { source, new Uri("https://fallback.example.test/stable.json") },
+            CancellationToken.None, null).SizeBytes == 20 && checks == 2,
+            "invalid size metadata can fall back to a valid manifest");
+
+        string root = Path.Combine(AppDomain.CurrentDomain.BaseDirectory,
+            "online-size-test-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            byte[] payload = Encoding.UTF8.GetBytes("cached verified installer fixture");
+            string previous = Path.Combine(root, "FourJ_PV_Toolbox_Setup_v1.0.3.exe");
+            File.WriteAllBytes(previous, payload);
+            string hash = ComputeSha256(previous);
+            foreach (long size in new[] { -1L, 0L, maximum + 1 })
+            {
+                int requests = 0;
+                UpdateService service = new UpdateService(delegate(Uri uri, CancellationToken token) {
+                    requests++;
+                    return new MemoryStream(payload);
+                }, 100, 100);
+                UpdateManifest manifest = UpdateManifestParser.Parse(ManifestJson(
+                    "https://primary.example.test/setup.exe", hash, 1));
+                manifest.SizeBytes = size;
+                ExpectUpdateException(delegate { service.DownloadInstaller(manifest, null, root); },
+                    "invalid online size rejected before cached installer reuse");
+                string untouched = Path.Combine(root, "no-files-" + size);
+                ExpectUpdateException(delegate { service.DownloadInstaller(manifest, null, untouched); },
+                    "invalid online size rejected before creating download directory");
+                Assert(requests == 0 && !Directory.Exists(untouched) && ComputeSha256(previous) == hash &&
+                    Directory.GetFiles(root, "*.part").Length == 0,
+                    "invalid online metadata performs no request/write and preserves existing installer");
+            }
+            foreach (long size in new[] { payload.LongLength - 1, payload.LongLength + 1 })
+            {
+                int requests = 0;
+                UpdateService service = new UpdateService(delegate(Uri uri, CancellationToken token) {
+                    requests++;
+                    return new MemoryStream(payload);
+                }, 100, 100);
+                UpdateManifest wrongSize = UpdateManifestParser.Parse(ManifestJson(
+                    "https://primary.example.test/setup.exe", hash, size));
+                ExpectUpdateException(delegate { service.DownloadInstaller(wrongSize, null, root); },
+                    "size mismatch is rejected even when the downloaded bytes match the declared hash");
+                Assert(requests == 1 && ComputeSha256(previous) == hash &&
+                    Directory.GetFiles(root, "*.part").Length == 0,
+                    "short/long download preserves the prior installer and removes partial files");
+            }
+            string localJson = ManifestJson(new Uri(previous).AbsoluteUri, hash, payload.Length).
+                Replace(",\"sizeBytes\":" + payload.Length, "");
+            UpdateService local = new UpdateService(delegate(Uri uri, CancellationToken token) {
+                return new MemoryStream(Encoding.UTF8.GetBytes(localJson));
+            }, 100, 100);
+            UpdateManifest legacy = local.FetchManifest(new Uri(Path.Combine(root, "legacy.json")));
+            Assert(legacy.SizeBytes == -1 && File.Exists(new UpdateService().DownloadInstaller(
+                legacy, null, Path.Combine(root, "legacy-download"))),
+                "legacy local-only manifest remains usable without declared size");
         }
         finally { Directory.Delete(root, true); }
     }

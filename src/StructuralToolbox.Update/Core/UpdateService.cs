@@ -70,9 +70,12 @@ namespace StructuralToolbox.Update
                             UpdateManifest manifest = UpdateManifestParser.Parse(
                                 Encoding.UTF8.GetString(buffer.ToArray()).TrimStart('\uFEFF'));
                             if (sources[i].Scheme == "https")
+                            {
+                                RequireOnlinePackageSize(manifest);
                                 foreach (Uri url in PackageSources(manifest))
                                     if (url.Scheme != "https")
                                         throw new UpdateException("在线清单包含非 HTTPS 下载地址。");
+                            }
                             attempt.Token.ThrowIfCancellationRequested();
                             return manifest;
                         }
@@ -102,6 +105,14 @@ namespace StructuralToolbox.Update
             IList<Uri> sources = PackageSources(manifest);
             if (manifest.SizeBytes > MaximumPackageSizeBytes)
                 throw new UpdateException("安装包超过 512 MB 上限。");
+            foreach (Uri source in sources)
+                if (source.Scheme == "https")
+                {
+                    // Validate before cached-file reuse, directory creation or
+                    // network I/O, including manifests supplied by API callers.
+                    RequireOnlinePackageSize(manifest);
+                    break;
+                }
             cancellation.ThrowIfCancellationRequested();
             string directory = String.IsNullOrWhiteSpace(targetDirectoryOverride)
                 ? Path.Combine(Environment.GetFolderPath(
@@ -171,6 +182,12 @@ namespace StructuralToolbox.Update
             }
             if (result.Count > 5) throw new UpdateException("下载线路数量超过上限。");
             return result;
+        }
+
+        private static void RequireOnlinePackageSize(UpdateManifest manifest)
+        {
+            if (manifest.SizeBytes <= 0 || manifest.SizeBytes > MaximumPackageSizeBytes)
+                throw new UpdateException("在线更新清单必须声明 1 字节至 512 MiB 的有效 sizeBytes。");
         }
 
         private static void RequireSource(Uri uri)

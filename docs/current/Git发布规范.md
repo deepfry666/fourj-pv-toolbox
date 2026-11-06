@@ -25,6 +25,7 @@ https://github.com/deepfry666/fourj-pv-toolbox/releases/latest/download/stable.j
 ```
 
 `stable.json` 的 `url` 必须直接指向同版本 GitHub Release 的安装器资产，`mirrors` 必须为空。
+在线清单必须声明 `sizeBytes`，范围为 1 字节至 512 MiB（含上限）；缺失、零或超限时客户端在检查阶段拒绝，网络下载及缓存复用前也会校验。
 客户端仍会校验 HTTPS、文件大小和 SHA-256，并使用临时文件完成原子下载。阿里云 VPS 不再
 参与清单检查、安装包下载或发行部署。
 
