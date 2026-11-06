@@ -7,5 +7,5 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyProduct("Four Seasons PV Toolbox")]
 [assembly: ComVisible(false)]
 [assembly: Guid("a1699902-c5ed-4f80-bd1e-6f29c28211e7")]
-[assembly: AssemblyVersion("1.0.10.0")]
-[assembly: AssemblyFileVersion("1.0.10.0")]
+[assembly: AssemblyVersion("1.0.11.0")]
+[assembly: AssemblyFileVersion("1.0.11.0")]

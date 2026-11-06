@@ -8,8 +8,8 @@ using StructuralToolbox.Commands;
 [assembly: AssemblyCompany("FourJTooLs")]
 [assembly: AssemblyProduct("四季光伏工具箱")]
 [assembly: ComVisible(false)]
-[assembly: AssemblyVersion("1.0.10.0")]
-[assembly: AssemblyFileVersion("1.0.10.0")]
+[assembly: AssemblyVersion("1.0.11.0")]
+[assembly: AssemblyFileVersion("1.0.11.0")]
 [assembly: CommandClass(typeof(RailCommands))]
 [assembly: CommandClass(typeof(AnnotationOverlapCommands))]
 #if INTERNAL_VERIFY
