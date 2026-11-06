@@ -1,5 +1,10 @@
 # 项目问题清单
 
+- [x] `ISSUE-0073` MText 段落控制码只保护了 \p 前缀，段落对齐、缩进和制表位参数残留在翻译正文，格式被改写仍能通过校验。
+  - 来源：2026-11-06 真实 AutoCAD 自主探针确认，\pxql,i-3,l3,r1,t6,12; 和 \pqc; 均被宿主识别为隐藏格式；当前模板泄漏其参数，模拟改为右对齐后 TryRestore 仍成功。证据 work/paragraph-format-before.log。
+  - 验收：有效且以分号结束的整个段落控制码作为单个占位符保护；正文继续可翻译，参数/关键词不送入正文；正确译文保留对齐/缩进/制表位，缺失或改写占位符拒绝；转义反斜杠和无结束分号的输入不得吞掉后续正文；核心/API/UI、CAD 写入/保存重开/撤销及完整回归通过，不调用真实 API 或修改用户配置。
+  - 完成日期：2026-11-06，开发源码修复，尚未发行。核心回归先复现整段控制码未保护；修复后左/中对齐、缩进/制表位、正文可翻译、坏占位符拒绝、转义反斜杠和缺少分号的边界均通过。真实 CAD 确认格式继续隐藏且原码完整，写入/保存重开及带居中段落的一次 U 撤销通过；翻译核心/API/缓存/四档 DPI/交互、六 DLL 构建及完整回归通过。证据 work/paragraph-protection-before-tests.log、work/paragraph-protection-module-tests.log、work/paragraph-protection-cad.log（work/drawing-translation-254dc418c42741c29ae3511cce79f384）、work/paragraph-protection-main-build.log、work/paragraph-protection-regression.log。
+
 - [x] `ISSUE-0072` 将工程数值占位符保护修复交付为 v1.0.12 稳定补丁并完成更新渠道验证。
   - 来源：自主推进软件更新，PR #9 已复现并修复 ISSUE-0071。
   - 验收：六 DLL、Bundle、安装器、标签与稳定清单统一版本；数值/CAD 格式/型号保护、翻译/API/缓存/UI、完整回归、真实 CAD 写入/保存重开/撤销及主模块、隔离安装/升级/回滚/卸载通过；草稿四资产下载回验后公开 latest，新旧更新模块可发现、下载和校验。保留用户设置、原图和历史发行；人工确认编辑保持可用，不自动升级本机正式安装，不冒称真实 API 或完整 CAD GUI 人工验收已完成。

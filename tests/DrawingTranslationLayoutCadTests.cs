@@ -18,13 +18,14 @@ internal static class DrawingTranslationLayoutCadTests
         CheckBlockNeighbour(database);
         CheckDrawingBoundary(database);
         CheckNumericParameters(database);
+        CheckParagraphFormatting(database);
         Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage(
-            "\nSTPV_TRANSLATION_LAYOUT_CAD_PASS scenarios=8");
+            "\nSTPV_TRANSLATION_LAYOUT_CAD_PASS scenarios=9");
     }
 
     internal static void CheckReopen(Database database)
     {
-        int free = 0, rotations = 0, attributes = 0, blocked = 0, formatted = 0, numeric = 0;
+        int free = 0, rotations = 0, attributes = 0, blocked = 0, formatted = 0, numeric = 0, paragraph = 0;
         MText upper = null, lower = null;
         using (Transaction tx = database.TransactionManager.StartOpenCloseTransaction())
         {
@@ -43,6 +44,9 @@ internal static class DrawingTranslationLayoutCadTests
                     if (text.Location.X == 100000 && text.Contents.Contains("Each group 24 modules") &&
                         text.Contents.Contains("3~5mm") && text.Contents.Contains("-0.30") &&
                         text.Contents.Contains("1.25e-3") && text.Contents.Contains("0.30kN/m²")) numeric++;
+                    if (text.Location.X == 110000 && text.Contents ==
+                        @"\pxql,i-3,l3,r1,t6,12;Technical requirements\PSecond paragraph" &&
+                        text.Width == 1000 && text.TextHeight == 10) paragraph++;
                 }
                 BlockReference block = entity as BlockReference;
                 if (block == null) continue;
@@ -61,7 +65,7 @@ internal static class DrawingTranslationLayoutCadTests
                                 content.Width == 240 && attribute.Height == 10) formatted++;
                 }
             }
-            Require(free == 1 && rotations == 7 && attributes == 2 && formatted == 1 && numeric == 1 && blocked == 1 &&
+            Require(free == 1 && rotations == 7 && attributes == 2 && formatted == 1 && numeric == 1 && paragraph == 1 && blocked == 1 &&
                 upper != null && lower != null && lower.TextHeight >= 7.5 && lower.TextHeight < 10 &&
                 upper.GeometricExtents.MinPoint.Y > lower.GeometricExtents.MaxPoint.Y,
                 "fitted, wrapped or retained text changed after save/reopen");
@@ -79,7 +83,7 @@ internal static class DrawingTranslationLayoutCadTests
             text.TextString = "光伏组件支架基础安装说明";
             Model(database, tx).AppendEntity(text); tx.AddNewlyCreatedDBObject(text, true); tx.Commit();
         }
-        AddMText(database, 2000, 1000, 240, AttachmentPoint.TopLeft, "设备基础");
+        AddMText(database, 2000, 1000, 240, AttachmentPoint.TopLeft, @"\pqc;设备基础");
         AddFormattedAttribute(database, 3000, "UNDO_FORMATTED", "{\\C1;设备}\\P基础");
     }
 
@@ -98,7 +102,7 @@ internal static class DrawingTranslationLayoutCadTests
         }
         int skipped;
         Require(Write(database, ids.ToArray(), new[] {
-            "STPV undo translated support note", "STPV undo translated equipment note",
+            "STPV undo translated support note", @"\pqc;STPV undo translated equipment note",
             "{\\C1;Equipment}\\PFoundation" },
             out skipped) == 3 && skipped == 0, "UNDO fixture did not translate all three text kinds");
     }
@@ -114,7 +118,7 @@ internal static class DrawingTranslationLayoutCadTests
                 DBText text = tx.GetObject(id, OpenMode.ForRead) as DBText;
                 MText mtext = tx.GetObject(id, OpenMode.ForRead) as MText;
                 if (text != null && text.TextString == "光伏组件支架基础安装说明") found++;
-                if (mtext != null && mtext.Contents == "设备基础" && mtext.TextHeight == 10) found++;
+                if (mtext != null && mtext.Contents == @"\pqc;设备基础" && mtext.TextHeight == 10) found++;
                 BlockReference block = tx.GetObject(id, OpenMode.ForRead) as BlockReference;
                 if (block != null)
                     foreach (ObjectId attributeId in block.AttributeCollection)
@@ -542,6 +546,34 @@ internal static class DrawingTranslationLayoutCadTests
             string value = ((MText)tx.GetObject(id, OpenMode.ForRead)).Contents;
             tx.Commit(); return value;
         }
+    }
+
+    private static void CheckParagraphFormatting(Database database)
+    {
+        const string code = @"\pxql,i-3,l3,r1,t6,12;";
+        ObjectId id = AddMText(database, 110000, 1000, 1000, AttachmentPoint.TopLeft,
+            code + @"技术要求\P第二段");
+        int skipped;
+        IList<TranslationTarget> targets = TranslationCommands.ReadTargets(database, new[] { id }, out skipped);
+        Require(targets.Count == 1 && skipped == 0 && targets[0].Item.Protection.Tokens.Contains(code),
+            "CAD paragraph alignment/indent/tab payload was not protected");
+        string translated, error;
+        Require(targets[0].Item.Protection.TryRestore(targets[0].Item.TranslatableContent.
+            Replace("技术要求", "Technical requirements").Replace("第二段", "Second paragraph"),
+            out translated, out error), "paragraph translation failed restoration");
+        int stale, layout;
+        Require(TranslationCommands.ReplaceEdits(database,
+            new[] { new TranslationEdit(targets[0], translated) }, out stale, out layout) == 1 &&
+            stale == 0 && layout == 0, "CAD paragraph translation did not fit");
+        using (Transaction tx = database.TransactionManager.StartOpenCloseTransaction())
+        {
+            MText text = (MText)tx.GetObject(id, OpenMode.ForRead);
+            Require(text.Contents == code + @"Technical requirements\PSecond paragraph" &&
+                text.Text.StartsWith("Technical requirements") && !text.Text.Contains("xql"),
+                "CAD paragraph formatting changed or became visible text");
+            tx.Commit();
+        }
+        Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\nPARAGRAPH_FORMAT_CAD_PASS");
     }
 
     private static BlockTableRecord Model(Database database, Transaction tx)
