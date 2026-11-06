@@ -1,14 +1,17 @@
 # 项目问题清单
 
-- [ ] `ISSUE-0074` 将 MText 完整段落控制码保护修复交付为 v1.0.13 稳定补丁并验证在线更新。
+- [x] `ISSUE-0074` 将 MText 完整段落控制码保护修复交付为 v1.0.13 稳定补丁并验证在线更新。
   - 来源：自主推进软件更新，PR #11 已复现并修复 ISSUE-0073。
   - 验收：六 DLL/Bundle/安装器/标签/清单统一版本；段落/数值/格式/型号保护、API/缓存/UI、完整回归、真实 CAD 格式写入/重开/撤销和主模块、隔离安装/升级/回滚/卸载通过；草稿四资产下载回验后公开 latest，新旧更新模块实际下载校验。保留原图/用户设置/历史发行，不自动升级本机正式安装，公开真实 API/完整 GUI 人工验收未执行的边界。
   - 2026-11-06 进展：最终候选、Source/Built 49/56 项、完整回归、段落/数值/型号与 API/缓存/UI、真实 CAD 格式写入/重开/撤销和主模块、隔离安装/升级/回滚/卸载均通过。1.0.12→1.0.13 隔离升级和反向降级拒绝通过，正式安装及设置不变。候选 2,248,960 字节，SHA-256 021798C3AD3B1228F0849C625231F3722374BAD9FDA00C0320B0AB7CE61AF734；待线上发行与回验，见 docs/安装器验证记录_v1.0.13.md。
+  - 完成日期：2026-11-06。PR #11/#12 已合并，v1.0.13 于 21:39:27（北京时间）公开为 latest，非草稿/预发布。源码 tag/release.json 绑定 d60d58d2c7e09a24ea4d6a251142c05426719535；四资产草稿下载回验一致，1.0.8 已安装、1.0.12 已发行冻结候选和 1.0.13 当前更新模块均通过新旧清单、版本判断及大小/SHA-256 下载校验。Published 体检 61 项、118 项原图/历史交付哈希保护通过，本机正式安装仍为 1.0.8。
+  - 发行：https://github.com/deepfry666/fourj-pv-toolbox/releases/tag/v1.0.13；证据 work/v113-github-publish-retry.log、work/release-download-check-43efc68541a942e88b1f03471b30593b、work/v113-live-clients、work/v113-installed-v108.log、work/v113-released-v112.log、work/v113-current-v113.log、work/v113-latest-release.json、work/v113-published-readiness.log、work/v113-originals-protection.log。首次上传遇到 HTTP 408、草稿无残留资产；同一冻结候选重试并下载回验成功后才公开，失败尝试不计为通过。
 
 - [x] `ISSUE-0073` MText 段落控制码只保护了 \p 前缀，段落对齐、缩进和制表位参数残留在翻译正文，格式被改写仍能通过校验。
   - 来源：2026-11-06 真实 AutoCAD 自主探针确认，\pxql,i-3,l3,r1,t6,12; 和 \pqc; 均被宿主识别为隐藏格式；当前模板泄漏其参数，模拟改为右对齐后 TryRestore 仍成功。证据 work/paragraph-format-before.log。
   - 验收：有效且以分号结束的整个段落控制码作为单个占位符保护；正文继续可翻译，参数/关键词不送入正文；正确译文保留对齐/缩进/制表位，缺失或改写占位符拒绝；转义反斜杠和无结束分号的输入不得吞掉后续正文；核心/API/UI、CAD 写入/保存重开/撤销及完整回归通过，不调用真实 API 或修改用户配置。
   - 完成日期：2026-11-06，开发源码修复，尚未发行。核心回归先复现整段控制码未保护；修复后左/中对齐、缩进/制表位、正文可翻译、坏占位符拒绝、转义反斜杠和缺少分号的边界均通过。真实 CAD 确认格式继续隐藏且原码完整，写入/保存重开及带居中段落的一次 U 撤销通过；翻译核心/API/缓存/四档 DPI/交互、六 DLL 构建及完整回归通过。证据 work/paragraph-protection-before-tests.log、work/paragraph-protection-module-tests.log、work/paragraph-protection-cad.log（work/drawing-translation-254dc418c42741c29ae3511cce79f384）、work/paragraph-protection-main-build.log、work/paragraph-protection-regression.log。
+  - 发行补充：2026-11-06 已随 v1.0.13 稳定补丁公开，四资产与新旧更新模块回验通过，见 ISSUE-0074。
 
 - [x] `ISSUE-0072` 将工程数值占位符保护修复交付为 v1.0.12 稳定补丁并完成更新渠道验证。
   - 来源：自主推进软件更新，PR #9 已复现并修复 ISSUE-0071。
