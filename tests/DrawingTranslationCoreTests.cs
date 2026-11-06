@@ -17,6 +17,7 @@ internal static class DrawingTranslationCoreTests
             VerifyDamagedTokensAreRejected();
             VerifyAdditionalCadFormatting();
             VerifyNumericParameters();
+            VerifyParagraphControlCodes();
             Console.WriteLine("PASS {0} drawing translation core tests", _passed);
             return 0;
         }
@@ -191,6 +192,31 @@ internal static class DrawingTranslationCoreTests
         Require(tolerance.Tokens.Contains("%%p") && tolerance.TryRestore(tolerance.Template,
             out final, out reason) && final == "尺寸100%%p2mm",
             "percent unit matching consumed part of a CAD tolerance code");
+        _passed++;
+    }
+
+    private static void VerifyParagraphControlCodes()
+    {
+        foreach (string code in new[] { @"\pxql,i-3,l3,r1,t6,12;", @"\pqc;", @"\pi2.5,l1.5,r0,t3,6;" })
+        {
+            string source = code + @"技术要求\P第二段";
+            ProtectedText text = TextProtection.Protect(source);
+            Require(text.Tokens.Contains(code), "paragraph command was not protected as a whole: " + code);
+            Require(text.Template.Contains("技术要求") && text.Template.Contains("第二段") &&
+                !text.Template.Contains(code.Substring(2)), "paragraph payload leaked or body was swallowed");
+            string restored, error;
+            Require(text.TryRestore(text.Template.Replace("技术要求", "Technical requirements").
+                Replace("第二段", "Second paragraph"), out restored, out error) &&
+                restored == code + @"Technical requirements\PSecond paragraph",
+                "paragraph alignment/indents/tabs changed during restoration");
+            Require(!text.TryRestore(text.Template.Replace(ProtectedText.TokenName(0), @"\pqr;"),
+                out restored, out error), "changed paragraph formatting bypassed token validation");
+        }
+        ProtectedText escaped = TextProtection.Protect(@"\\pxql;文字");
+        Require(escaped.Tokens.Contains(@"\\") && !escaped.Tokens.Contains(@"\pxql;"),
+            "escaped literal backslash was mistaken for a paragraph command");
+        ProtectedText incomplete = TextProtection.Protect(@"\pxql技术要求");
+        Require(incomplete.Template.Contains("技术要求"), "unterminated code swallowed visible text");
         _passed++;
     }
 }

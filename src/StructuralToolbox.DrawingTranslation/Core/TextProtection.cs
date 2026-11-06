@@ -17,7 +17,7 @@ namespace StructuralToolbox.DrawingTranslation.Core
             @"(?:\s*" + Unit + @"(?:\s*[/·*]\s*" + Unit + @")*)?";
 
         private static readonly Regex ProtectedPattern = new Regex(
-            @"%<[^%>]*>%|%%[A-Za-z0-9]|\\(?:U\+[0-9A-Fa-f]{4}|[~\\{}PpLlOoKk])|\\(?:W|w|H|h|S|s|A|a|C|c|F|f|T|t|Q|q)[^;{}]*;?|[{}]|(?<![A-Za-z])(?:[A-Z]{1,6}[-/]?[0-9]+[A-Za-z0-9./+\-×xX*]*)|" + NumericParameter,
+            @"%<[^%>]*>%|%%[A-Za-z0-9]|\\p[^;{}\\]*;|\\(?:U\+[0-9A-Fa-f]{4}|[~\\{}PLlOoKk])|\\(?:W|w|H|h|S|s|A|a|C|c|F|f|T|t|Q|q)[^;{}]*;?|[{}]|(?<![A-Za-z])(?:[A-Z]{1,6}[-/]?[0-9]+[A-Za-z0-9./+\-×xX*]*)|" + NumericParameter,
             RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         public static ProtectedText Protect(string input)
