@@ -23,6 +23,8 @@
   - 范围：更新仓库引用、发行脚本及更新源；验证旧地址到新仓库的清单和资产兼容；整理旧库与开发入口。
   - 验收：新仓库公开可访问，旧客户端可读取有效稳定清单并下载匹配安装包，后续发行只使用新仓库。
   - 完成日期：2026-11-05。已改名，旧、新清单匿名请求均为 200 且哈希相同；旧清单安装包下载、大小与 SHA-256 校验通过；当前配置和发布脚本使用新仓库。详情见 REPOSITORY_MIGRATION.md。
+  - 2026-11-06 复核：本机 origin 已从已删除的旧私有库切换到公开主库，工作分支以最新 main（58a4770）为基线；没有合入旧私有历史。当前源码更新模块只读取新仓库，发行准备脚本默认相同仓库；已安装 1.0.8 仍用旧 Release 名称，匿名重定向有效。两份真实 .NET Framework 更新模块均识别 latest v1.0.8、正确判断版本并下载校验 2,245,217 字节安装包，SHA-256 为 4e28c12289ed004f74067757508b69ed97b12a945a877a960e4250b73726dc20，四个 Release 资产记录一致。未执行安装器、未修改线上 Release。
+  - 复验入口与证据：scripts/verify-github-update-channel.ps1；work/translation-layout-update-channel-final.log、work/github-update-channel-ee54f4a32a464707b9c07cff6e3bedb6（current/installed/result.json）。旧地址保留在历史清单中，以重定向维持兼容；本轮不重写已发布资产。
 
 - [ ] `ISSUE-0061` 所有者手动删除已归档的旧私有源码库 `SijiPVToolbox-AutoCAD2020`。
   - 状态：交由用户手动处理；GitHub CLI 缺少 delete_repo 权限，用户已明确表示无权限操作由本人完成。
