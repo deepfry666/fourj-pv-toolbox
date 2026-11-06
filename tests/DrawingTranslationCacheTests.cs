@@ -19,6 +19,7 @@ internal static class DrawingTranslationCacheTests
             CheckCapacity(Path.Combine(directory, "capacity.json"));
             CheckBrokenJson(Path.Combine(directory, "broken.json"));
             CheckLockedFile(Path.Combine(directory, "locked.json"));
+            CheckSerializedSize(Path.Combine(directory, "size.json"));
             Console.WriteLine("PASS drawing translation cache recovery: timestamps, nulls, expiry, capacity, JSON and I/O");
         }
         finally { Directory.Delete(directory, true); }
@@ -124,6 +125,34 @@ internal static class DrawingTranslationCacheTests
         using (SHA256 sha = SHA256.Create())
             return BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(input))).
                 Replace("-", "").ToLowerInvariant();
+    }
+
+    private static void CheckSerializedSize(string path)
+    {
+        TranslationApiSettings settings = Settings();
+        long now = DateTime.UtcNow.Ticks;
+        Dictionary<string, TranslationCache.CacheEntry> entries =
+            new Dictionary<string, TranslationCache.CacheEntry>();
+        for (int index = 0; index < 1800; index++)
+            entries[Key(settings, "sized-" + index)] = Entry(now - 1800 + index, new String('A', 1000));
+        Write(path, entries);
+        TranslationCache cache = new TranslationCache(path);
+        cache.Put(settings, "new-long-note", new String('B', 100000));
+        string value;
+        Require(cache.TryGet(settings, "new-long-note", out value) && value.Length == 100000,
+            "a usable new note was lost instead of evicting older cache entries");
+        Require(File.ReadAllText(path, Encoding.UTF8).Length <= 2097152 &&
+            !cache.TryGet(settings, "sized-0", out value) &&
+            cache.TryGet(settings, "sized-1799", out value),
+            "serialized budget or oldest-first size eviction failed");
+        cache.Put(settings, "uncacheable-raw", new String('W', 3000000));
+        cache.Put(settings, "uncacheable-escaped", new String('\u0001', 500000));
+        Require(!cache.TryGet(settings, "uncacheable-raw", out value) &&
+            !cache.TryGet(settings, "uncacheable-escaped", out value) &&
+            new TranslationCache(path).TryGet(settings, "new-long-note", out value),
+            "oversized or escape-expanded entries interrupted saving usable translations");
+        Require(Read(path).Count < 1801, "size pressure did not remove old entries");
+        Console.WriteLine("PASS drawing translation cache JSON size/escape budget");
     }
 
     private static TranslationCache.CacheEntry Entry(long ticks, string value)
