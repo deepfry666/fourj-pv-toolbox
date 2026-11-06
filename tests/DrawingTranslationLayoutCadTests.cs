@@ -17,13 +17,14 @@ internal static class DrawingTranslationLayoutCadTests
         CheckTable(database);
         CheckBlockNeighbour(database);
         CheckDrawingBoundary(database);
+        CheckNumericParameters(database);
         Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage(
-            "\nSTPV_TRANSLATION_LAYOUT_CAD_PASS scenarios=7");
+            "\nSTPV_TRANSLATION_LAYOUT_CAD_PASS scenarios=8");
     }
 
     internal static void CheckReopen(Database database)
     {
-        int free = 0, rotations = 0, attributes = 0, blocked = 0, formatted = 0;
+        int free = 0, rotations = 0, attributes = 0, blocked = 0, formatted = 0, numeric = 0;
         MText upper = null, lower = null;
         using (Transaction tx = database.TransactionManager.StartOpenCloseTransaction())
         {
@@ -39,6 +40,9 @@ internal static class DrawingTranslationLayoutCadTests
                     if (text.Location.X == 10000 && text.Contents == "设备基础") blocked++;
                     if (text.Contents == "Equipment base waterproofing") upper = text;
                     if (text.Contents == "PV support foundation") lower = text;
+                    if (text.Location.X == 100000 && text.Contents.Contains("Each group 24 modules") &&
+                        text.Contents.Contains("3~5mm") && text.Contents.Contains("-0.30") &&
+                        text.Contents.Contains("1.25e-3") && text.Contents.Contains("0.30kN/m²")) numeric++;
                 }
                 BlockReference block = entity as BlockReference;
                 if (block == null) continue;
@@ -57,7 +61,7 @@ internal static class DrawingTranslationLayoutCadTests
                                 content.Width == 240 && attribute.Height == 10) formatted++;
                 }
             }
-            Require(free == 1 && rotations == 7 && attributes == 2 && formatted == 1 && blocked == 1 &&
+            Require(free == 1 && rotations == 7 && attributes == 2 && formatted == 1 && numeric == 1 && blocked == 1 &&
                 upper != null && lower != null && lower.TextHeight >= 7.5 && lower.TextHeight < 10 &&
                 upper.GeometricExtents.MinPoint.Y > lower.GeometricExtents.MaxPoint.Y,
                 "fitted, wrapped or retained text changed after save/reopen");
@@ -505,6 +509,30 @@ internal static class DrawingTranslationLayoutCadTests
             ObjectId id = Model(database, tx).AppendEntity(text);
             tx.AddNewlyCreatedDBObject(text, true); tx.Commit(); return id;
         }
+    }
+
+    private static void CheckNumericParameters(Database database)
+    {
+        ObjectId id = AddMText(database, 100000, 1000, 2000, AttachmentPoint.TopLeft,
+            "每组24块；范围3~5mm；标高-0.30；系数1.25e-3；荷载0.30kN/m²");
+        int skipped;
+        IList<TranslationTarget> targets = TranslationCommands.ReadTargets(database, new[] { id }, out skipped);
+        Require(targets.Count == 1 && skipped == 0, "numeric CAD fixture was not readable");
+        string restored, error;
+        Require(!targets[0].Item.Protection.TryRestore(targets[0].Item.TranslatableContent.
+            Replace(ProtectedText.TokenName(0), "42"), out restored, out error),
+            "modified numeric result was accepted before CAD write");
+        string template = targets[0].Item.TranslatableContent.Replace("每组", "Each group ").
+            Replace("块", " modules").Replace("范围", "range ").Replace("标高", "level ").
+            Replace("系数", "factor ").Replace("荷载", "load ");
+        Require(targets[0].Item.Protection.TryRestore(template, out restored, out error),
+            "valid numeric translation did not restore");
+        int stale, layout;
+        Require(TranslationCommands.ReplaceEdits(database,
+            new[] { new TranslationEdit(targets[0], restored) }, out stale, out layout) == 1 &&
+            stale == 0 && layout == 0 && ReadMText(database, id) == restored,
+            "numeric values or compound units changed on CAD write");
+        Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\nNUMERIC_PARAMETERS_CAD_PASS");
     }
 
     private static string ReadMText(Database database, ObjectId id)

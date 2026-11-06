@@ -16,6 +16,7 @@ internal static class DrawingTranslationCoreTests
             VerifyBatchCountsAndFailures();
             VerifyDamagedTokensAreRejected();
             VerifyAdditionalCadFormatting();
+            VerifyNumericParameters();
             Console.WriteLine("PASS {0} drawing translation core tests", _passed);
             return 0;
         }
@@ -157,5 +158,39 @@ internal static class DrawingTranslationCoreTests
     {
         if (!condition)
             throw new InvalidOperationException(message);
+    }
+
+    private static void VerifyNumericParameters()
+    {
+        foreach (string value in new[] { "24", "3~5mm", "-0.30", "±0.5mm",
+            "1:20", "1000×2000mm", "0.30kN/m²", "0.30kN/m2", "≤235MPa", "1.25e-3",
+            "−0.25", ".50", "1,500", "2026-11-06", "1.2.3", "≤ 0.30 kN/m²" })
+        {
+            string original = "参数" + value + "要求";
+            ProtectedText protection = TextProtection.Protect(original);
+            Require(protection.Tokens.Contains(value), "engineering value was not fully protected: " + value);
+            string restored, error;
+            Require(protection.TryRestore(protection.Template.Replace("参数", "Parameter ").
+                Replace("要求", " required"), out restored, out error) &&
+                restored == "Parameter " + value + " required",
+                "engineering value failed exact roundtrip: " + value);
+            Require(!protection.TryRestore(protection.Template.Replace(ProtectedText.TokenName(0), "999"),
+                out restored, out error), "rewritten parameter was accepted: " + value);
+        }
+        ProtectedText prose = TextProtection.Protect("Use 24 modules and 5 supports");
+        Require(prose.Template.Contains("modules") && prose.Template.Contains("supports") &&
+            prose.Tokens.Contains("24") && prose.Tokens.Contains("5"),
+            "numeric protection swallowed ordinary English words as units");
+        string formatted = @"{\C1;厚度3~5mm}\P标高-0.30 H200×100×4.5×6";
+        ProtectedText cad = TextProtection.Protect(formatted);
+        string final, reason;
+        Require(cad.TryRestore(cad.Template.Replace("厚度", "Thickness ").Replace("标高", "Level "),
+            out final, out reason) && final == formatted.Replace("厚度", "Thickness ").Replace("标高", "Level "),
+            "numeric protection changed existing CAD formatting or section identifiers");
+        ProtectedText tolerance = TextProtection.Protect("尺寸100%%p2mm");
+        Require(tolerance.Tokens.Contains("%%p") && tolerance.TryRestore(tolerance.Template,
+            out final, out reason) && final == "尺寸100%%p2mm",
+            "percent unit matching consumed part of a CAD tolerance code");
+        _passed++;
     }
 }

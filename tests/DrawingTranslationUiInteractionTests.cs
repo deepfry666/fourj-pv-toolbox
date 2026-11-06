@@ -286,8 +286,8 @@ internal static class DrawingTranslationUiInteractionTests
                 TranslationApiSettingsStore store = CreateStore(path, server);
                 DrawingTextItem item = DrawingTextItemFactory.Create("2A",
                     DrawingTextKind.DbText, "厚度为3~5mm", false, false);
-                string marker = ProtectedText.TokenName(0);
-                server.FirstTranslation = "Thickness is 3~" + marker;
+                server.FirstTranslation = item.TranslatableContent.Replace(
+                    "厚度为", "Thickness is ");
                 IList<TranslationTarget> targets =
                     new List<TranslationTarget> {
                         new TranslationTarget(ObjectId.Null, -1, -1, item) };
