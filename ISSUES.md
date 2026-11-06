@@ -1,5 +1,10 @@
 # 项目问题清单
 
+- [x] `ISSUE-0071` 自动翻译的裸数字、范围起点、负数和科学计数未完整进入占位符保护，数值被改写后仍能通过校验。
+  - 来源：2026-11-06 离线复现：原文“每组24块，间隙3~5mm，标高-0.30，调整1.25e-3”只保护了 5mm，模拟返回把 24→42、3→8、-0.30→-3.0、1.25e-3→99 后 TryRestore 仍成功，见 work/number-protection-before.log。
+  - 验收：自动请求保护数量、带符号数值、范围/尺寸/比例、科学计数及常见复合单位，保留 CAD 格式与型号；删除/改写数值占位符应拒绝，正确模板能原样还原；翻译核心/API/UI、CAD 替换/保存重开/撤销及完整回归通过。确认窗仍允许用户主动编辑译文，不用此修复禁止人工校正。
+  - 完成日期：2026-11-06，开发源码修复，尚未发行。work/number-protection-before.log 与 work/numeric-protection-before-tests.log 先复现；修复后 16 组数值表达式、普通英文单位边界、CAD 公差码/格式/型号还原及坏占位符拒绝通过。真实 AutoCAD 检查数值和复合单位写入/保存重开，替换与一次撤销通过；独立翻译核心/API/缓存/四档 DPI/交互、六 DLL 构建和完整回归通过。证据 work/numeric-protection-module-tests.log、work/numeric-protection-cad.log（work/drawing-translation-568cf66ba49c4995a176c1bac0dfeb19）、work/numeric-protection-main-build.log、work/numeric-protection-regression.log；无真实翻译 API 调用和用户配置改写。
+
 - [x] `ISSUE-0070` 将多行块属性完整内容及原文变化保护修复发布为 v1.0.11 稳定补丁。
   - 来源：自主推进软件更新，PR #7 已复现并修复 ISSUE-0069。
   - 验收：六 DLL/Bundle/安装器/标签/清单统一版本；翻译/API/缓存/UI、完整回归、格式属性替换/只改格式跳过/保存重开/一次撤销、主模块 CAD、隔离安装/升级/回滚/卸载通过；草稿四资产回验后公开 latest，旧版更新模块可发现、下载并校验新版。原图、用户设置及历史发行保留，不自动升级本机正式安装；真实 API/完整 GUI 人工验收的未执行边界保留。
