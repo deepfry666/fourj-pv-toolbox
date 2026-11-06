@@ -1,14 +1,17 @@
 # 项目问题清单
 
-- [ ] `ISSUE-0070` 将多行块属性完整内容及原文变化保护修复发布为 v1.0.11 稳定补丁。
+- [x] `ISSUE-0070` 将多行块属性完整内容及原文变化保护修复发布为 v1.0.11 稳定补丁。
   - 来源：自主推进软件更新，PR #7 已复现并修复 ISSUE-0069。
   - 验收：六 DLL/Bundle/安装器/标签/清单统一版本；翻译/API/缓存/UI、完整回归、格式属性替换/只改格式跳过/保存重开/一次撤销、主模块 CAD、隔离安装/升级/回滚/卸载通过；草稿四资产回验后公开 latest，旧版更新模块可发现、下载并校验新版。原图、用户设置及历史发行保留，不自动升级本机正式安装；真实 API/完整 GUI 人工验收的未执行边界保留。
   - 2026-11-06 进展：最终候选、完整回归、Source/Built 49/56 项、独立翻译/API/缓存/UI、格式属性 CAD/保存重开/一次撤销、主六模块 CAD及隔离安装/升级/回滚/卸载通过；1.0.10→1.0.11 隔离升级与反向降级拒绝也通过，正式安装/设置不变。候选 2,248,641 字节，SHA-256 7843CD0E38D7C403E2A1574C002825174575355D698F7AB63D0AF6D49B2A8CAE；待 GitHub 四资产和在线更新回验，详见 docs/安装器验证记录_v1.0.11.md。
+  - 完成日期：2026-11-06。PR #7/#8 已合并，v1.0.11 于 20:25:04（北京时间）公开为 latest，非草稿/预发布。源码 tag/release.json 固定指向 ca2a52ba6f6243ae72a4640844a9a946d3749a39，四资产草稿下载回验一致；1.0.8 已安装、1.0.10 已发行冻结候选、1.0.11 当前更新模块均通过新旧清单、版本判断及下载大小/SHA-256 校验。Published 体检 61 项和 106 项原图/历史交付哈希保护通过，本机正式安装仍为 1.0.8。
+  - 发行：https://github.com/deepfry666/fourj-pv-toolbox/releases/tag/v1.0.11；证据 work/v111-github-publish.log、work/release-download-check-d761d2e19db54805b75441bad0244415、work/v111-live-clients、work/v111-installed-v108.log、work/v111-released-v110.log、work/v111-current-v111.log、work/v111-published-readiness.log、work/v111-originals-protection.log。
 
 - [x] `ISSUE-0069` 多行块属性按单行 TextString 读取，翻译时丢失段落/行内格式，且确认期间仅格式变化无法触发原文变化保护。
   - 来源：2026-11-06 真实 AutoCAD 自主样例确认：属性内部 Contents 含颜色码和段落，TextString 只返回去格式的空格合并文字；当前保护模板未包含这些格式，写入后颜色和换行丢失。
   - 验收：多行属性使用内部 MText.Contents 进行原文读取、占位符保护及写前核对，普通属性保持 TextString；格式与段落在替换、保存重开、一次撤销后正确保留；只改格式时也按原文变化跳过，现有属性/翻译/API/UI 和完整回归通过。测试仅使用 work/ 自主样例，不调用真实翻译服务。
   - 完成日期：2026-11-06，开发源码修复，尚未发行。真实 CAD 先复现格式/段落未进入保护模板，修复后颜色及段落占位符还原、只改颜色判为 stale、用户格式保留、保存重开和 DBText/MText/格式属性的一次 U 撤销均通过；翻译核心/API/缓存/四档 DPI/WinForms 交互、六 DLL 构建和完整回归通过。证据 work/attribute-format-probe-summary.log、work/attribute-content-before-cad.log、work/attribute-content-fixed-cad.log（work/drawing-translation-db11343a0efb4d7f9481d12c96ae8015）、work/attribute-content-module-tests.log、work/attribute-content-main-build.log、work/attribute-content-regression.log。
+  - 发行补充：2026-11-06 已随 v1.0.11 稳定补丁公开，新旧更新模块回验通过，见 ISSUE-0070。
 
 - [x] `ISSUE-0068` 将缓存故障恢复和 JSON 容量限制修复交付为 v1.0.10 稳定补丁，并验证 GitHub 更新闭环。
   - 来源：用户授权自主推进软件更新和 bug 排查，PR #5 已实现并验证 ISSUE-0066、0067。
